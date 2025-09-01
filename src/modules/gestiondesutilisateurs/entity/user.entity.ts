@@ -21,6 +21,7 @@ import { Article } from "../../gestiondesarticles/entity/Article";
 
 import { Commune } from "../../gestiondeszones/entity/Communes";
 import { UserForum } from "../../gestionelearning/entity/UserForum";
+import { Reponse } from "../../gestionelearning/entity/Reponse";
 
 @Entity()
 export class User {
@@ -92,6 +93,9 @@ export class User {
 
   @Column({ default: true })
   statut: boolean;
+
+  @OneToMany(() => Reponse, reponse => reponse.user)
+      reponses: Reponse[];
 
   @CreateDateColumn()
   createdAt: Date;

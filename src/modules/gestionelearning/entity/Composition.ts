@@ -4,6 +4,8 @@ import { Professeur } from "./Professeur";
 import { Note } from "./Note";
 import { AnneeAcademique } from "./AnneAcademique";
 import { FiliereNiveauMatiere } from "./FiliereNiveauMatiere";
+import { CompositionQuestion } from "./CompositionQuestion";
+import { Reponse } from "./Reponse";
 
 
 @Entity()
@@ -30,6 +32,12 @@ export class Composition {
 
     @ManyToOne(() => FiliereNiveauMatiere, (filiereNiveauMatiere) => filiereNiveauMatiere.compositions)
     filiereNiveauMatiere: FiliereNiveauMatiere
+
+    @OneToMany(() => CompositionQuestion, compoQuestion => compoQuestion.composition)
+    compoQuestions: CompositionQuestion[];
+
+    @OneToMany(() => Reponse, reponse => reponse.composition)
+    reponses: Reponse[];
 
     @CreateDateColumn()
     createdAt: Timestamp
