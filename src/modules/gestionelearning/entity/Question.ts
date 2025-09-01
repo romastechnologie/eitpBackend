@@ -24,15 +24,6 @@ export class Question {
     @ManyToOne(() => User)
     userCreation: User;
 
-    @CreateDateColumn()
-    createdAt: Timestamp;
-
-    @UpdateDateColumn()
-    updatedAt: Timestamp;
-
-    @DeleteDateColumn()
-    deletedAt: Timestamp;
-
     @OneToMany(() => PropositionReponse, (proposition) => proposition.question)
     propositions: PropositionReponse[];
 
@@ -44,4 +35,14 @@ export class Question {
 
     @OneToMany(() => FiliereNiveauMatiere, (filiereNiveauMatiere) => filiereNiveauMatiere.question)
     filiereNiveauMatieres: FiliereNiveauMatiere[];
+
+
+    @CreateDateColumn()
+    createdAt: Timestamp;
+
+    @UpdateDateColumn()
+    updatedAt: Timestamp;
+
+    @DeleteDateColumn()
+    deletedAt: Timestamp;
 }
