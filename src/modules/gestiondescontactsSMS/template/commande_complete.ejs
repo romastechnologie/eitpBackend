@@ -1,0 +1,134 @@
+<!-- views/receipt.ejs -->
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Receipt</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        background-color: #f0f0f0;
+        margin: 0;
+        padding: 20px;
+      }
+      .container {
+        max-width: 800px;
+        margin: auto;
+        background-color: #fff;
+        padding: 20px;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        border-radius: 8px;
+      }
+      h1 {
+        text-align: center;
+        color: #333;
+      }
+      .order-details,
+      .customer-details {
+        margin-bottom: 20px;
+      }
+      .order-details p,
+      .customer-details p {
+        margin: 5px 0;
+      }
+      h2 {
+        border-bottom: 2px solid #333;
+        padding-bottom: 5px;
+      }
+      ul {
+        list-style: none;
+        padding: 0;
+      }
+      ul li {
+        background: #f0f0f0;
+        margin: 5px 0;
+        padding: 10px;
+        border-radius: 4px;
+      }
+      ul li:nth-child(even) {
+        background: #e0e0e0;
+      }
+      .thank-you {
+        text-align: center;
+        margin-top: 30px;
+        padding: 20px;
+        background-color: #fec329;
+        border-radius: 8px;
+      }
+      .thank-you p {
+        margin: 10px 0;
+      }
+      .thank-you a {
+        display: inline-block;
+        margin-top: 10px;
+        padding: 10px 20px;
+        /* background-color: #00796b;#F8D04B */
+        background-color: #272727;
+        color: white;
+        text-decoration: none;
+        border-radius: 4px;
+      }
+      .thank-you a:hover {
+        background-color: #000000;
+      }
+      table {
+        border-radius: 4px;
+        background-color: #f0f0f0;
+        width: 100%;
+      }
+      tr {
+        min-height: 20px !important;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h1>Commande reçue</h1>
+      <div class="order-details">
+        <p><strong>N° commande:</strong> <%= refCommande %></p>
+        <p><strong>Total commande:</strong></p>
+        <p><strong>Client:</strong> <%= client %></p>
+      </div>
+      <!-- <div class="customer-details">
+      </div> -->
+      <h2>Articles</h2>
+
+      <table>
+        <thead style="background-color: #cdcdcd">
+          <tr>
+            <th style="text-align: left">Denomination</th>
+            <th style="min-width: 30px">Qté</th>
+            <th style="min-width: 30px">Prix</th>
+            <th style="min-width: 30px">Montant</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% items.forEach(function(item) { %>
+          <tr style="margin: 5px 10px">
+            <td><%= item.title %></td>
+            <td style="text-align: right !important; padding-right: 5px">
+              <%= item.quantite %>
+            </td>
+            <td style="text-align: right !important; padding-right: 5px">
+              <%= item.price %>
+            </td>
+            <td style="text-align: right !important; padding-right: 5px">
+              <%= (item.quantite * item.price) %>
+            </td>
+          </tr>
+          <% }) %>
+        </tbody>
+      </table>
+      <div class="thank-you">
+        <p>Merci pour votre achat !</p>
+        <p>
+          Nous espérons que vous apprécierez vos articles. <br />
+          Si vous avez des questions ou besoin d’aide, n’hésitez pas à
+          communiquer avec nous.
+        </p>
+        <p>Au plaisir de votre prochaine visite!</p>
+        <a href="/">Acheter à nouveau</a>
+      </div>
+    </div>
+  </body>
+</html>

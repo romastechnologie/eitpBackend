@@ -1,0 +1,142 @@
+<!-- views/receipt.ejs -->
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Receipt</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        background-color: #f0f0f0;
+        margin: 0;
+        padding: 20px;
+      }
+      .container {
+        max-width: 800px;
+        margin: auto;
+        background-color: #fff;
+        padding: 20px;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        border-radius: 8px;
+      }
+      h1 {
+        /* text-align: center; */
+        color: #333;
+      }
+      .order-details,
+      .customer-details {
+        margin-bottom: 20px;
+      }
+      .order-details p,
+      .customer-details p {
+        margin: 5px 0;
+      }
+      h2 {
+        border-bottom: 2px solid #333;
+        padding-bottom: 5px;
+      }
+      ul {
+        list-style: none;
+        padding: 0;
+      }
+      ul li {
+        background: #f0f0f0;
+        margin: 5px 0;
+        padding: 10px;
+        border-radius: 4px;
+      }
+      ul li:nth-child(even) {
+        background: #e0e0e0;
+      }
+      .thank-you {
+        text-align: center;
+        margin-top: 30px;
+        padding: 20px;
+        background-color: #fec329;
+        border-radius: 8px;
+      }
+      .thank-you p {
+        margin: 10px 0;
+      }
+      .thank-you a {
+        display: inline-block;
+        margin-top: 4px;
+        /* padding: 10px 20px; */
+        /* background-color: #00796b;#F8D04B */
+        /* background-color: #272727; */
+        color: rgb(6, 3, 209);
+        text-decoration: none;
+        font-weight: bold;
+        /* border-radius: 4px; */
+      }
+      /* .thank-you a:hover {
+        background-color: #000000;
+      } */
+      table {
+        border-radius: 4px;
+        background-color: #f0f0f0;
+        width: 100%;
+      }
+      tr {
+        min-height: 20px !important;
+      }
+      .confirmLink {
+        display: inline-block;
+        margin-top: 10px;
+        padding: 10px 20px;
+        background-color: #272727;
+        color: white;
+        text-decoration: none;
+        border-radius: 4px;
+      }
+      p {
+        line-height: 20px !important;
+        text-align: justify !important;
+      }
+      p.end {
+        text-align: center !important;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h1>Confirmer votre adresse mail</h1>
+      <p>
+        Merci de vous être inscrit(e) sur
+        <strong> boutique.nostests.com </strong>. <br />
+        Afin de vous garantir une meilleure expérience et de pouvoir utiliser
+        pleinement toutes les fonctionnalités de notre plateforme, nous vous
+        prions de bien vouloir confirmer votre adresse e-mail. <br />
+        Pour ce faire, il vous suffit de cliquer sur le lien ci-dessous :
+      </p>
+
+      <a class="confirmLink" href="<%= url %>">Confirmer mon adresse</a>
+      <!-- <a class="confirmLink" href="<%= url %>">Confirmer mon adresse</a> -->
+
+      <p>
+        Une fois votre e-mail confirmé, vous aurez un accès complet à votre
+        compte et à toutes nos fonctionnalités, telles que le suivi des
+        commandes, vos informations personnelles, votre histoqirque, etc...
+      </p>
+
+      <p>
+        Si vous n’avez pas créé de compte ou si vous ne reconnaissez pas cette
+        demande, veuillez ignorer ce message. Nous prenons votre sécurité très
+        au sérieux et n'effectuerons aucune modification sans votre accord.
+      </p>
+
+      <p>
+        Le lien de confirmation est valide pendant <strong>30 minutes</strong>,
+        après quoi vous devrez demander un nouveau lien si vous n’avez pas
+        encore confirmé votre e-mail.
+      </p>
+
+      <div class="thank-you">
+        <p class="end">Merci pour votre adhésion !</p>
+        <p class="end">Profitez plainement de nos offres promotionnelles</p>
+        <p class="end">Au plaisir de votre prochaine visite!</p>
+        <a href="https://boutique.nostests.com">Retour sur la boutique</a>
+      </div>
+    </div>
+  </body>
+</html>
