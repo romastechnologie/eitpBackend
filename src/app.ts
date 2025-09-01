@@ -39,6 +39,10 @@ import { filieresRoutes } from "./modules/gestionelearning/route/filiere.route";
 import { forumsRoutes } from "./modules/gestionelearning/route/forum.route";
 import { matieresRoutes } from "./modules/gestionelearning/route/matiere.route";
 import { professeursRoutes } from "./modules/gestionelearning/route/professeur.route";
+import { questionsRoutes } from "./modules/gestionelearning/route/question.route";
+import { reponseRoutes } from "./modules/gestionelearning/route/reponse.route";
+import { propositionReponseRoutes } from "./modules/gestionelearning/route/propositionreponse.route";
+
 
 require("dotenv").config();
 
@@ -172,6 +176,10 @@ filieresRoutes(app);
 forumsRoutes(app);
 matieresRoutes(app);
 professeursRoutes(app);
+questionsRoutes(app);
+reponseRoutes(app);
+propositionReponseRoutes(app);
+
 
 
 //Autorisation des entêtes

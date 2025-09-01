@@ -16,8 +16,8 @@ export const createForum = async (req: Request, res: Response) => {
     }
     await myDataSource.getRepository(Forum).save(forum)
     .then((forum_ : Forum | Forum[]) => {
-        const titre = !isArray(forum_) ? forum_.titre : '';
-        const message = `L'étudiant ${titre} a bien été créé.`
+        const nom = !isArray(forum_) ? forum_.nom : '';
+        const message = `Le forum ${nom} a bien été créé.`
         return success(res,201, forum,message);
     })
     .catch(error => {
@@ -56,6 +56,22 @@ export const getAllForum = async (req: Request, res: Response) => {
     })
 };
 
+export const getAllForums= async (req: Request, res: Response) => {
+    await myDataSource.getRepository(Forum).find({
+        relations:{
+            
+        }
+    })
+    .then((retour) => {
+        const message = 'La liste des forums a bien été récupérée.';
+        return success(res,200,{data:retour}, message);
+    }).catch(error => {
+        const message = `La liste des forums n'a pas pu être récupérée. Réessayez dans quelques instants.`
+        //res.status(500).json({ message, data: error })
+        return generateServerErrorCode(res,500,error,message)
+    })
+};
+
 export const getForum = async (req: Request, res: Response) => {
     await myDataSource.getRepository(Forum).findOne({
         where: {
@@ -67,14 +83,14 @@ export const getForum = async (req: Request, res: Response) => {
     })
     .then(forum => {
         if(forum === null) {
-          const message = `L'étudiant demandé n'existe pas. Réessayez avec un autre identifiant.`
+          const message = `Le forum demandé n'existe pas. Réessayez avec un autre identifiant.`
           return generateServerErrorCode(res,400,"L'id n'existe pas",message)
         }
         const message = `Le forum de méda a bien été trouvé.`
         return success(res,200, forum,message);
     })
     .catch(error => {
-        const message = `L'étudiant n'a pas pu être récupéré. Réessayez dans quelques instants.`
+        const message = `Le forum n'a pas pu être récupéré. Réessayez dans quelques instants.`
         return generateServerErrorCode(res,500,error,message)
     })
 };
@@ -101,7 +117,7 @@ export const updateForum = async (req: Request, res: Response) => {
         return generateServerErrorCode(res,400,errors,message)
     }
     await myDataSource.getRepository(Forum).save(forum).then(forum => {
-        const message = `L'étudiant ${forum.id} a bien été modifié.`
+        const message = `Le forum ${forum.id} a bien été modifié.`
         return success(res,200, forum,message);
     }).catch(error => {
         if(error instanceof ValidationError) {
@@ -110,7 +126,7 @@ export const updateForum = async (req: Request, res: Response) => {
         if(error.code == "ER_DUP_ENTRY") {
             return generateServerErrorCode(res,400,error,'Ce forum de média existe déjà')
         }
-        const message = `L'étudiant n'a pas pu être ajouté. Réessayez dans quelques instants.`
+        const message = `Le forum n'a pas pu être ajouté. Réessayez dans quelques instants.`
         return generateServerErrorCode(res,500,error,message)
         // res.status(500).json({ message, data: error }) 
     })
@@ -126,7 +142,7 @@ export const deleteForum = async (req: Request, res: Response) => {
         })
     .then(forum => {        
         if(forum === null) {
-          const message = `L'étudiant demandé n'existe pas. Réessayez avec un autre identifiant.`
+          const message = `Le forum demandé n'existe pas. Réessayez avec un autre identifiant.`
           return generateServerErrorCode(res,400,"L'id n'existe pas",message);
         }
 
@@ -136,12 +152,12 @@ export const deleteForum = async (req: Request, res: Response) => {
         }else{
             myDataSource.getRepository(Forum).softRemove(forum)
             .then(_ => {
-                const message = `L'étudiant avec l'identifiant n°${forum.id} a bien été supprimé.`;
+                const message = `Le forum avec l'identifiant n°${forum.id} a bien été supprimé.`;
                 return success(res,200, forum,message);
             })
         }
     }).catch(error => {
-        const message = `L'étudiant n'a pas pu être supprimé. Réessayez dans quelques instants.`
+        const message = `Le forum n'a pas pu être supprimé. Réessayez dans quelques instants.`
         return generateServerErrorCode(res,500,error,message)
     })
 }

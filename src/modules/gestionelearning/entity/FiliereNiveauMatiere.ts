@@ -14,7 +14,7 @@ export class FiliereNiveauMatiere {
 
     @Column({ nullable: false })
     @IsNotEmpty({ message: "Le coefficient est obligatoire" })
-    coefficient: Date
+    coefficient: number
 
     @Column({ nullable: false })
     @IsNotEmpty({ message: "Le statut est obligatoire" })

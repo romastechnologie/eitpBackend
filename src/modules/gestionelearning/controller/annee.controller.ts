@@ -56,6 +56,31 @@ export const getAllAnneeAcademique = async (req: Request, res: Response) => {
     })
 };
 
+export const getAllAnneeAcademiques = async (req: Request, res: Response) => {
+  const { searchTerm, searchQueries } = paginationAndRechercheInit(req, AnneeAcademique);
+
+  try {
+    let reque = myDataSource.getRepository(AnneeAcademique)
+      .createQueryBuilder('annee')
+      .where("annee.deletedAt IS NULL");
+
+    if (searchQueries.length > 0) {
+      reque.andWhere(new Brackets(qb => {
+        qb.where(searchQueries.join(' OR '), { keyword: `%${searchTerm}%` });
+      }));
+    }
+
+    const data = await reque.getMany();
+
+    const message = 'La liste des années a bien été récupérée.';
+    return success(res, 200, { data }, message);
+  } catch (error) {
+    const message = `La liste des années n'a pas pu être récupérée. Réessayez dans quelques instants.`;
+    return generateServerErrorCode(res, 500, error, message);
+  }
+};
+
+
 export const getAnneeAcademique = async (req: Request, res: Response) => {
     await myDataSource.getRepository(AnneeAcademique).findOne({
         where: {

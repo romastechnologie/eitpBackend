@@ -85,8 +85,6 @@ export const getAllPropositionReponses = async (req: Request, res: Response) => 
         });
 };
 
-
-
 export const updatePropositionReponse = async (req: Request, res: Response) => {
     const proposition = await myDataSource.getRepository(PropositionReponse).findOneBy({ id: parseInt(req.params.id) });
     if (!proposition) {

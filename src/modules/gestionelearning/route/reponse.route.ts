@@ -2,7 +2,7 @@ import * as express from 'express';
 import { createReponse, deleteReponse, getAllReponses, getReponse, updateReponse, getReponsesByProposition, getResultsByQuestion } from '../controller/reponse.controller';
 import { checkPermission } from '../../../middlewares/auth.middleware';
 
-export const reponseSondageRoutes = (router: express.Router) => {
+export const reponseRoutes = (router: express.Router) => {
   router.post('/api/reponses', checkPermission('AddReponse'), createReponse);
   router.get('/api/reponses', checkPermission('ListReponse'), getAllReponses);
   router.get('/api/reponses/:id', checkPermission('ViewReponse'), getReponse);

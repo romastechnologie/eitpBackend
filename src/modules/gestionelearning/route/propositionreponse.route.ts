@@ -2,7 +2,7 @@ import * as express from 'express';
 import { createPropositionReponse, deletePropositionReponse, getAllPropositionReponses,getPropositionsByQuestion, getReponsesByProposition, updatePropositionReponse } from '../controller/propositionreponse.controller';
 import { checkPermission } from '../../../middlewares/auth.middleware';
 
-export const propositionResponseRoutes = (router: express.Router) => {
+export const propositionReponseRoutes = (router: express.Router) => {
   router.post('/api/propositions', checkPermission('AddPropositionReponse'), createPropositionReponse);
   router.get('/api/propositions', checkPermission('ListPropositionReponse'), getAllPropositionReponses);
   router.get('/api/propositions/:id', checkPermission('ViewPropositionReponse'), getReponsesByProposition);
