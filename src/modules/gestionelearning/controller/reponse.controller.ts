@@ -1,25 +1,21 @@
-
 import { Reponse } from "../entity/Reponse";
 import { Question } from "../entity/Question";
 import { myDataSource } from "../../../configs/data-source";
 import { generateServerErrorCode, success, validateMessage } from "../../../configs/response";
 import { Request, Response } from "express";
-import { ValidationError, validate, ValidatorOptions } from "class-validator"; // Import ValidatorOptions
+import { ValidationError, validate, ValidatorOptions } from "class-validator";
 import { paginationAndRechercheInit } from "../../../configs/paginationAndRechercheInit";
-import { Brackets } from "typeorm";
 import { checkRelationsOneToMany } from "../../../configs/checkRelationsOneToManyBeforDelete";
 import { In } from "typeorm";
 import { PropositionReponse } from "../entity/PropositionReponse";
 
+// PropositionReponse Créer une réponse
 export const createReponse = async (req: Request, res: Response) => {
-    const { sondageId, questionId, propositionIds } = req.body;
+    const { questionId, propositionIds } = req.body;
 
     console.log("Données reçues:", req.body);
 
     // Validation des champs obligatoires
-    if (!sondageId) {
-        return generateServerErrorCode(res, 400, null, "L'identifiant du sondage est obligatoire");
-    }
     if (!questionId) {
         return generateServerErrorCode(res, 400, null, "L'identifiant de la question est obligatoire");
     }
@@ -29,27 +25,16 @@ export const createReponse = async (req: Request, res: Response) => {
 
     try {
         const reponses = await myDataSource.transaction(async (transactionalEntityManager) => {
-            // Vérifier que le sondage existe
-            const sondage = await transactionalEntityManager.getRepository(Sondage).findOneBy({
-                id: parseInt(sondageId),
-                deletedAt: null,
-            });
-            if (!sondage) {
-                throw new Error("Le sondage spécifié n'existe pas ou a été supprimé");
-            }
-
-            // Vérifier que la question existe et appartient au sondage
+            // Vérifier que la question existe
             const question = await transactionalEntityManager.getRepository(Question).findOneBy({
                 id: parseInt(questionId),
-                // sondage: { id: parseInt(sondageId) }, // Décommentez pour filtrer uniquement les questions liées au sondage
                 deletedAt: null,
             });
-            console.log("Question trouvée:", question);
             if (!question) {
-                throw new Error("La question spécifiée n'existe pas ou n'est pas associée au sondage");
+                throw new Error("La question spécifiée n'existe pas.");
             }
 
-            // Utiliser l'opérateur In pour rechercher les propositions
+            // Récupérer les propositions associées à la question
             const propositionEntities = await transactionalEntityManager.getRepository(PropositionReponse).find({
                 where: {
                     id: In(propositionIds.map(id => parseInt(id))),
@@ -58,40 +43,32 @@ export const createReponse = async (req: Request, res: Response) => {
                 },
             });
 
-            console.log("Propositions trouvées:", propositionEntities);
-            console.log("Nombre de propositions trouvées:", propositionEntities.length);
-            console.log("Nombre de propositions demandées:", propositionIds.length);
-
-            // Vérifier que toutes les propositions ont été trouvées
             if (propositionEntities.length !== propositionIds.length) {
                 const foundIds = propositionEntities.map(p => p.id.toString());
                 const missingIds = propositionIds.filter(id => !foundIds.includes(id.toString()));
-                console.log("IDs manquants:", missingIds);
-                throw new Error(`Une ou plusieurs propositions spécifiées n'existent pas ou ne sont pas associées à la question. IDs manquants: ${missingIds.join(', ')}`);
+                throw new Error(`Certaines propositions sont introuvables ou non liées à la question. IDs manquants: ${missingIds.join(', ')}`);
             }
 
-            // Créer une réponse pour chaque proposition avec initialisation complète
+            // Créer une réponse pour chaque proposition
             const reponses = [];
-            for (let i = 0; i < propositionIds.length; i++) {
-                const propId = parseInt(propositionIds[i]);
-                const proposition = propositionEntities.find(p => p.id === propId);
-
+            for (const propId of propositionIds) {
+                const proposition = propositionEntities.find(p => p.id === parseInt(propId));
                 if (!proposition) {
                     throw new Error(`Proposition avec ID ${propId} introuvable`);
                 }
 
                 const reponseEntity = transactionalEntityManager.getRepository(Reponse).create({
-                    proposition: proposition,
-                    
-                    // question: question, // Décommentez si la relation question est requise dans Reponse
+                    proposition,
+                    question, // relation optionnelle si définie dans l’entité
                 });
+
                 reponses.push(reponseEntity);
             }
 
-            // Validation avec options pour ignorer les champs non définis
+            // Validation
             const validatorOptions: ValidatorOptions = {
-                skipMissingProperties: true, // Ignore les champs non définis
-                forbidUnknownValues: false, // Autorise les valeurs inconnues
+                skipMissingProperties: true,
+                forbidUnknownValues: false,
             };
             const errors = await validate(reponses, validatorOptions);
             if (errors.length > 0) {
@@ -102,43 +79,44 @@ export const createReponse = async (req: Request, res: Response) => {
             return await transactionalEntityManager.getRepository(Reponse).save(reponses);
         });
 
-        const message = `Les réponses ont été créées avec succès pour le sondage ${sondageId}.`;
+        const message = `Les réponses ont été créées avec succès pour la question ${questionId}.`;
         return success(res, 201, reponses, message);
-    } catch (error) {
+    } catch (error: any) {
         console.error("Erreur lors de la création de la réponse:", error);
         const message = error.message || "Les réponses n'ont pas pu être ajoutées. Réessayez dans quelques instants.";
         return generateServerErrorCode(res, 500, error, message);
     }
 };
 
+// PropositionReponse Récupérer toutes les réponses
 export const getAllReponses = async (req: Request, res: Response) => {
-    const { page, limit, searchTerm, startIndex, searchQueries } = paginationAndRechercheInit(req, Reponse);
+    const { page, limit, searchTerm, startIndex } = paginationAndRechercheInit(req, Reponse);
 
-    let query = await myDataSource.getRepository(Reponse)
+    let query = myDataSource.getRepository(Reponse)
         .createQueryBuilder("reponse")
         .leftJoinAndSelect("reponse.proposition", "proposition")
         .where("reponse.deletedAt IS NULL");
-    
+
     if (searchTerm && searchTerm.trim() !== "") {
-        query.andWhere(
-            `(proposition.contenu LIKE :keyword)`,
-            { keyword: `%${searchTerm}%` }
-        );
+        query.andWhere(`(proposition.contenu LIKE :keyword)`, { keyword: `%${searchTerm}%` });
     }
+
     query.orderBy(`reponse.id`, 'ASC')
         .skip(startIndex)
         .take(limit)
         .getManyAndCount()
         .then(([data, totalElements]) => {
-            const message = 'La liste des réponses a bien été récupérée.';
             const totalPages = Math.ceil(totalElements / limit);
+            const message = 'La liste des réponses a bien été récupérée.';
             return success(res, 200, { data, totalPages, totalElements, limit }, message);
-        }).catch(error => {
-            const message = `La liste des réponses n'a pas pu être récupérée. Réessayez dans quelques instants.`;
+        })
+        .catch(error => {
+            const message = `La liste des réponses n'a pas pu être récupérée.`;
             return generateServerErrorCode(res, 500, error, message);
         });
 };
 
+// PropositionReponse Récupérer une réponse
 export const getReponse = async (req: Request, res: Response) => {
     await myDataSource.getRepository(Reponse)
         .createQueryBuilder("reponse")
@@ -148,67 +126,60 @@ export const getReponse = async (req: Request, res: Response) => {
         .getOne()
         .then(reponse => {
             if (!reponse) {
-                const message = `La réponse demandée n'existe pas. Réessayez avec un autre identifiant.`;
-                return generateServerErrorCode(res, 400, "L'id n'existe pas", message);
+                return generateServerErrorCode(res, 400, "L'id n'existe pas", "La réponse demandée n'existe pas.");
             }
-            const message = `La réponse a bien été trouvée.`;
-            return success(res, 200, reponse, message);
+            return success(res, 200, reponse, "La réponse a bien été trouvée.");
         })
         .catch(error => {
-            const message = `La réponse n'a pas pu être récupérée. Réessayez dans quelques instants.`;
-            return generateServerErrorCode(res, 500, error, message);
+            return generateServerErrorCode(res, 500, error, "Erreur lors de la récupération de la réponse.");
         });
 };
 
+// PropositionReponse Mettre à jour une réponse
 export const updateReponse = async (req: Request, res: Response) => {
     const reponse = await myDataSource.getRepository(Reponse).findOneBy({ id: parseInt(req.params.id) });
     if (!reponse) {
-        return generateServerErrorCode(res, 400, "L'id n'existe pas", 'Cette réponse existe déjà');
+        return generateServerErrorCode(res, 400, "L'id n'existe pas", "Cette réponse n'existe pas.");
     }
+
     myDataSource.getRepository(Reponse).merge(reponse, req.body);
     const errors = await validate(reponse);
     if (errors.length > 0) {
-        const message = validateMessage(errors);
-        return generateServerErrorCode(res, 400, errors, message);
+        return generateServerErrorCode(res, 400, errors, validateMessage(errors));
     }
-    await myDataSource.getRepository(Reponse).save(reponse).then(reponse => {
-        const message = `La réponse a bien été modifiée.`;
-        return success(res, 200, reponse, message);
-    }).catch(error => {
-        if (error instanceof ValidationError) {
-            return generateServerErrorCode(res, 400, error, 'Cette réponse existe déjà');
-        }
-        if (error.code == "ER_DUP_ENTRY") {
-            return generateServerErrorCode(res, 400, error, 'Cette réponse existe déjà');
-        }
-        const message = `La réponse n'a pas pu être ajoutée. Réessayez dans quelques instants.`;
-        return generateServerErrorCode(res, 500, error, message);
-    });
+
+    await myDataSource.getRepository(Reponse).save(reponse)
+        .then(reponse => success(res, 200, reponse, "La réponse a bien été modifiée."))
+        .catch(error => {
+            if (error instanceof ValidationError) {
+                return generateServerErrorCode(res, 400, error, "Erreur de validation");
+            }
+            if ((error as any).code === "ER_DUP_ENTRY") {
+                return generateServerErrorCode(res, 400, error, "Cette réponse existe déjà");
+            }
+            return generateServerErrorCode(res, 500, error, "Erreur lors de la modification de la réponse.");
+        });
 };
 
+// PropositionReponse Supprimer une réponse
 export const deleteReponse = async (req: Request, res: Response) => {
-    const resultat = await checkRelationsOneToMany('Reponse', parseInt(req.params.id));
-    await myDataSource.getRepository(Reponse).findOneBy({ id: parseInt(req.params.id) }).then(reponse => {
-        if (!reponse) {
-            const message = `La réponse demandée n'existe pas. Réessayez avec un autre identifiant.`;
-            return generateServerErrorCode(res, 400, "L'id n'existe pas", message);
-        }
-        if (resultat) {
-            const message = `Cette réponse est liée à d'autres enregistrements. Vous ne pouvez pas la supprimer.`;
-            return generateServerErrorCode(res, 400, "Cette réponse est liée à d'autres enregistrements. Vous ne pouvez pas la supprimer.", message);
-        } else {
-            myDataSource.getRepository(Reponse).softRemove(reponse)
-                .then(_ => {
-                    const message = `La réponse a bien été supprimée.`;
-                    return success(res, 200, reponse, message);
-                });
-        }
-    }).catch(error => {
-        const message = `La réponse n'a pas pu être supprimée. Réessayez dans quelques instants.`;
-        return generateServerErrorCode(res, 500, error, message);
-    });
+    const resultat = await checkRelationsOneToMany("Reponse", parseInt(req.params.id));
+
+    await myDataSource.getRepository(Reponse).findOneBy({ id: parseInt(req.params.id) })
+        .then(reponse => {
+            if (!reponse) {
+                return generateServerErrorCode(res, 400, "L'id n'existe pas", "La réponse demandée n'existe pas.");
+            }
+            if (resultat) {
+                return generateServerErrorCode(res, 400, "Contrainte", "Cette réponse est liée à d'autres enregistrements.");
+            }
+            return myDataSource.getRepository(Reponse).softRemove(reponse)
+                .then(_ => success(res, 200, reponse, "La réponse a bien été supprimée."));
+        })
+        .catch(error => generateServerErrorCode(res, 500, error, "Erreur lors de la suppression de la réponse."));
 };
 
+// PropositionReponse Récupérer les réponses d'une proposition
 export const getReponsesByProposition = async (req: Request, res: Response) => {
     await myDataSource.getRepository(Reponse)
         .createQueryBuilder("reponse")
@@ -218,28 +189,22 @@ export const getReponsesByProposition = async (req: Request, res: Response) => {
         .getMany()
         .then(reponses => {
             if (!reponses || reponses.length === 0) {
-                const message = `Aucune réponse ne correspond à cette proposition.`;
-                return generateServerErrorCode(res, 400, "Aucune réponse ne correspond à cette proposition", message);
+                return generateServerErrorCode(res, 400, "Not Found", "Aucune réponse ne correspond à cette proposition.");
             }
-            const message = `Les réponses à la proposition ont été récupérées avec succès.`;
-            return success(res, 200, reponses, message);
+            return success(res, 200, reponses, "Les réponses ont été récupérées avec succès.");
         })
-        .catch(error => {
-            const message = `Les réponses n'ont pas pu être récupérées. Réessayez dans quelques instants.`;
-            return generateServerErrorCode(res, 500, error, message);
-        });
+        .catch(error => generateServerErrorCode(res, 500, error, "Erreur lors de la récupération des réponses."));
 };
 
+// PropositionReponse Résultats d'une question (votes)
 export const getResultsByQuestion = async (req: Request, res: Response) => {
     const questionId = parseInt(req.params.questionId);
 
     if (isNaN(questionId) || questionId <= 0) {
-        const message = `L'identifiant de la question doit être un nombre valide.`;
-        return generateServerErrorCode(res, 400, "Invalid Question ID", message);
+        return generateServerErrorCode(res, 400, "Invalid Question ID", "L'identifiant de la question doit être un nombre valide.");
     }
 
     try {
-        // Récupérer les propositions associées à la question et compter les réponses
         const results = await myDataSource
             .getRepository(PropositionReponse)
             .createQueryBuilder("proposition")
@@ -258,14 +223,11 @@ export const getResultsByQuestion = async (req: Request, res: Response) => {
             .getRawMany();
 
         if (!results || results.length === 0) {
-            const message = `Aucun résultat disponible pour cette question.`;
-            return generateServerErrorCode(res, 404, "No Results", message);
+            return generateServerErrorCode(res, 404, "No Results", "Aucun résultat disponible pour cette question.");
         }
 
-        // Calculer le total des votes
         const totalVotes = results.reduce((sum, result) => sum + (result.count || 0), 0);
 
-        // Calculer les pourcentages
         const formattedResults = results.map(result => ({
             propositionId: result.propositionId,
             label: result.label,
@@ -273,74 +235,8 @@ export const getResultsByQuestion = async (req: Request, res: Response) => {
             percentage: totalVotes > 0 ? ((result.count / totalVotes) * 100).toFixed(1) : 0,
         }));
 
-        const message = `Les résultats de la question ont été récupérés avec succès.`;
-        return success(res, 200, { success: true, data: formattedResults, totalVotes }, message);
+        return success(res, 200, { success: true, data: formattedResults, totalVotes }, "Résultats récupérés avec succès.");
     } catch (error) {
-        const message = `Les résultats de la question n'ont pas pu être récupérés. Réessayez dans quelques instants.`;
-        return generateServerErrorCode(res, 500, error, message);
+        return generateServerErrorCode(res, 500, error, "Erreur lors de la récupération des résultats.");
     }
 };
-
-// export const getSondageByCodeLien = async (req: Request, res: Response) => {
-//   const codeLien = req.params.codeLien;
-
-//   if (!codeLien) {
-//     const message = `Le code de lien est obligatoire.`;
-//     return generateServerErrorCode(res, 400, "Invalid CodeLien", message);
-//   }
-
-//   try {
-//     const sondage = await myDataSource
-//       .getRepository(Sondage)
-//       .createQueryBuilder("sondage")
-//       .leftJoinAndSelect("sondage.questions", "questions")
-//       .leftJoinAndSelect("questions.propositions", "propositions")
-//       .leftJoinAndSelect("propositions.reponses", "reponses")
-//       .where("sondage.codeLien = :codeLien", { codeLien })
-//       .andWhere("sondage.deletedAt IS NULL")
-//       .getOne();
-
-//     if (!sondage) {
-//       const message = `Le sondage demandé n'existe pas pour ce code de lien.`;
-//       return generateServerErrorCode(res, 404, "Sondage non trouvé", message);
-//     }
-
-//     const message = `Le sondage a bien été trouvé via le code de lien.`;
-//     return success(res, 200, sondage, message);
-//   } catch (error) {
-//     const message = `Le sondage n'a pas pu être récupéré via le code de lien. Réessayez dans quelques instants.`;
-//     return generateServerErrorCode(res, 500, error, message);
-//   }
-// };
-
-
-// export const getQuestionsBySondage = async (req: Request, res: Response) => {
-//   const sondageId = parseInt(req.params.id);
-
-//   if (isNaN(sondageId) || sondageId <= 0) {
-//     const message = `L'identifiant du sondage doit être un nombre valide.`;
-//     return generateServerErrorCode(res, 400, "Invalid Sondage ID", message);
-//   }
-
-//   try {
-//     const sondage = await myDataSource
-//       .getRepository(Sondage)
-//       .createQueryBuilder("sondage")
-//       .leftJoinAndSelect("sondage.questions", "questions")
-//       .leftJoinAndSelect("questions.propositions", "propositions")
-//       .where("sondage.id = :id", { id: sondageId })
-//       .andWhere("sondage.deletedAt IS NULL")
-//       .getOne();
-
-//     if (!sondage || !sondage.questions) {
-//       const message = `Aucun sondage ou aucune question trouvée pour cet identifiant.`;
-//       return generateServerErrorCode(res, 404, "Sondage non trouvé", message);
-//     }
-
-//     const message = `Les questions du sondage ont été récupérées avec succès.`;
-//     return success(res, 200, { data: sondage.questions }, message);
-//   } catch (error) {
-//     const message = `Les questions du sondage n'ont pas pu être récupérées. Réessayez dans quelques instants.`;
-//     return generateServerErrorCode(res, 500, error, message);
-//   }
-// };

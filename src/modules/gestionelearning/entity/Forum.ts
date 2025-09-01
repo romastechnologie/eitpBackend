@@ -9,8 +9,8 @@ export class Forum {
     id: number
 
     @Column({ unique: true, nullable: false })
-    @IsNotEmpty({ message: "Le titre est obligatoire" })
-    titre: string
+    @IsNotEmpty({ message: "Le nom est obligatoire" })
+    nom: string
 
     @Column('longtext', { nullable: false })
     @IsNotEmpty({ message: "La description est obligatoire" })
