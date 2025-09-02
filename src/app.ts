@@ -42,6 +42,7 @@ import { professeursRoutes } from "./modules/gestionelearning/route/professeur.r
 import { questionsRoutes } from "./modules/gestionelearning/route/question.route";
 import { reponseRoutes } from "./modules/gestionelearning/route/reponse.route";
 import { propositionReponseRoutes } from "./modules/gestionelearning/route/propositionreponse.route";
+import { niveauxRoutes } from "./modules/gestionelearning/route/niveau.route";
 
 
 require("dotenv").config();
@@ -179,6 +180,7 @@ professeursRoutes(app);
 questionsRoutes(app);
 reponseRoutes(app);
 propositionReponseRoutes(app);
+niveauxRoutes(app);
 
 
 

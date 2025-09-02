@@ -17,17 +17,17 @@ export const createMatiere = async (req: Request, res: Response) => {
     await myDataSource.getRepository(Matiere).save(matiere)
     .then((matiere_ : Matiere | Matiere[]) => {
         const libelle = !isArray(matiere_) ? matiere_.libelle : '';
-        const message = `L'étudiant ${libelle} a bien été créé.`
+        const message = `La matière ${libelle} a bien été créée.`
         return success(res,201, matiere,message);
     })
     .catch(error => {
         if(error instanceof ValidationError) {
-            return generateServerErrorCode(res,400,error,'Ce matiere existe déjà.')
+            return generateServerErrorCode(res,400,error,'Cette matière existe déjà.')
         }
         if(error.code == "ER_DUP_ENTRY") {
-            return generateServerErrorCode(res,400,error,'Ce matiere existe déjà.')
+            return generateServerErrorCode(res,400,error,'Cette matière existe déjà.')
         }
-        const message = `Le matiere n'a pas pu être ajouté. Réessayez dans quelques instants.`
+        const message = `La  matière n'a pas pu être ajoutée. Réessayez dans quelques instants.`
         return generateServerErrorCode(res,500,error,message)
     })
 }
@@ -83,14 +83,14 @@ export const getMatiere = async (req: Request, res: Response) => {
     })
     .then(matiere => {
         if(matiere === null) {
-          const message = `L'étudiant demandé n'existe pas. Réessayez avec un autre identifiant.`
+          const message = `La matière demandé n'existe pas. Réessayez avec un autre identifiant.`
           return generateServerErrorCode(res,400,"L'id n'existe pas",message)
         }
-        const message = `Le matiere de méda a bien été trouvé.`
+        const message = `La  matière de méda a bien été trouvé.`
         return success(res,200, matiere,message);
     })
     .catch(error => {
-        const message = `L'étudiant n'a pas pu être récupéré. Réessayez dans quelques instants.`
+        const message = `La matière n'a pas pu être récupéré. Réessayez dans quelques instants.`
         return generateServerErrorCode(res,500,error,message)
     })
 };
@@ -117,16 +117,16 @@ export const updateMatiere = async (req: Request, res: Response) => {
         return generateServerErrorCode(res,400,errors,message)
     }
     await myDataSource.getRepository(Matiere).save(matiere).then(matiere => {
-        const message = `L'étudiant ${matiere.id} a bien été modifié.`
+        const message = `La matière ${matiere.id} a bien été modifié.`
         return success(res,200, matiere,message);
     }).catch(error => {
         if(error instanceof ValidationError) {
-            return generateServerErrorCode(res,400,error,'Ce matiere de média existe déjà')
+            return generateServerErrorCode(res,400,error,'Cette matière de média existe déjà')
         }
         if(error.code == "ER_DUP_ENTRY") {
-            return generateServerErrorCode(res,400,error,'Ce matiere de média existe déjà')
+            return generateServerErrorCode(res,400,error,'Cette matière de média existe déjà')
         }
-        const message = `L'étudiant n'a pas pu être ajouté. Réessayez dans quelques instants.`
+        const message = `La matière n'a pas pu être ajouté. Réessayez dans quelques instants.`
         return generateServerErrorCode(res,500,error,message)
         // res.status(500).json({ message, data: error }) 
     })
@@ -142,22 +142,22 @@ export const deleteMatiere = async (req: Request, res: Response) => {
         })
     .then(matiere => {        
         if(matiere === null) {
-          const message = `L'étudiant demandé n'existe pas. Réessayez avec un autre identifiant.`
+          const message = `La matière demandé n'existe pas. Réessayez avec un autre identifiant.`
           return generateServerErrorCode(res,400,"L'id n'existe pas",message);
         }
 
         if(resultat){
-            const message = `Ce matiere de média est lié à d'autres enregistrements. Vous ne pouvez pas le supprimer.`
-            return generateServerErrorCode(res,400,"Ce matiere de média est lié à d'autres enregistrements. Vous ne pouvez pas le supprimer.",message);
+            const message = `Cette matière de média est lié à d'autres enregistrements. Vous ne pouvez pas le supprimer.`
+            return generateServerErrorCode(res,400,"Cette matière de média est lié à d'autres enregistrements. Vous ne pouvez pas le supprimer.",message);
         }else{
             myDataSource.getRepository(Matiere).softRemove(matiere)
             .then(_ => {
-                const message = `L'étudiant avec l'identifiant n°${matiere.id} a bien été supprimé.`;
+                const message = `La matière avec l'identifiant n°${matiere.id} a bien été supprimé.`;
                 return success(res,200, matiere,message);
             })
         }
     }).catch(error => {
-        const message = `L'étudiant n'a pas pu être supprimé. Réessayez dans quelques instants.`
+        const message = `La matière n'a pas pu être supprimé. Réessayez dans quelques instants.`
         return generateServerErrorCode(res,500,error,message)
     })
 }

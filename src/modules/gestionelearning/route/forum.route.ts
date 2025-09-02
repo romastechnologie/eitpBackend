@@ -3,10 +3,20 @@ import { createForum, deleteForum, getAllForum, getAllForums, getForum, updateFo
 import { checkPermission } from '../../../middlewares/auth.middleware';
 
 export  const forumsRoutes =  (router: express.Router) => {
-  router.post('/api/forums',checkPermission('AddForum'), createForum);
-  router.get('/api/forums',checkPermission('ListForum'), getAllForum);
-  router.get('/api/all/forums',checkPermission('ListAllForum'), getAllForums);
-  router.get('/api/forums/:id',checkPermission('ViewForum'), getForum);
-  router.delete('/api/forums/:id',checkPermission('DeleteForum'),deleteForum);
-  router.put('/api/forums/:id',checkPermission('EditForum'), updateForum);
+  // router.post('/api/forums',checkPermission('AddForum'), createForum);
+  // router.get('/api/forums',checkPermission('ListForum'), getAllForum);
+  // router.get('/api/all/forums',checkPermission('ListAllForum'), getAllForums);
+  // router.get('/api/forums/:id',checkPermission('ViewForum'), getForum);
+  // router.delete('/api/forums/:id',checkPermission('DeleteForum'),deleteForum);
+  // router.put('/api/forums/:id',checkPermission('EditForum'), updateForum);
+
+
+  router.post('/api/forums',createForum);
+  router.get('/api/forums', getAllForum);
+  router.get('/api/all/forums',getAllForums);
+  router.get('/api/forums/:id', getForum);
+  router.delete('/api/forums/:id',deleteForum);
+  router.put('/api/forums/:id',updateForum);
+
+
 };

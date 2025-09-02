@@ -22,10 +22,10 @@ export const createNiveau = async (req: Request, res: Response) => {
     })
     .catch(error => {
         if(error instanceof ValidationError) {
-            return generateServerErrorCode(res,400,error,'Cette réponse existe déjà.')
+            return generateServerErrorCode(res,400,error,'Ce niveau existe déjà.')
         }
         if(error.code == "ER_DUP_ENTRY") {
-            return generateServerErrorCode(res,400,error,'Cette réponse existe déjà.')
+            return generateServerErrorCode(res,400,error,'Ce niveau existe déjà.')
         }
         const message = `Le niveau n'a pas pu être ajoutée. Réessayez dans quelques instants.`
         return generateServerErrorCode(res,500,error,message)
@@ -118,10 +118,10 @@ export const updateNiveau = async (req: Request, res: Response) => {
         return success(res,200, niveau,message);
     }).catch(error => {
         if(error instanceof ValidationError) {
-            return generateServerErrorCode(res,400,error,'Cette réponse de média existe déjà')
+            return generateServerErrorCode(res,400,error,'Ce niveau de média existe déjà')
         }
         if(error.code == "ER_DUP_ENTRY") {
-            return generateServerErrorCode(res,400,error,'Cette réponse de média existe déjà')
+            return generateServerErrorCode(res,400,error,'Ce niveau de média existe déjà')
         }
         const message = `Le niveau n'a pas pu être ajoutée. Réessayez dans quelques instants.`
         return generateServerErrorCode(res,500,error,message)
@@ -144,8 +144,8 @@ export const deleteNiveau = async (req: Request, res: Response) => {
         }
 
         if(resultat){
-            const message = `Cette réponse de média est liée à d'autres enregistrements. Vous ne pouvez pas le supprimer.`
-            return generateServerErrorCode(res,400,"Cette réponse de média est lié à d'autres enregistrements. Vous ne pouvez pas le supprimer.",message);
+            const message = `Ce niveau de média est liée à d'autres enregistrements. Vous ne pouvez pas le supprimer.`
+            return generateServerErrorCode(res,400,"Ce niveau de média est lié à d'autres enregistrements. Vous ne pouvez pas le supprimer.",message);
         }else{
             myDataSource.getRepository(Niveau).softRemove(niveau)
             .then(_ => {

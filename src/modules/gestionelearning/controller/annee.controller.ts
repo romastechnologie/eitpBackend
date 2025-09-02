@@ -15,22 +15,22 @@ export const createAnneeAcademique = async (req: Request, res: Response) => {
         return generateServerErrorCode(res,400,errors,message)
     }
     await myDataSource.getRepository(AnneeAcademique).save(annee)
-    .then((annee_ : AnneeAcademique | AnneeAcademique[]) => {
-        const libelle = !isArray(annee_) ? annee_.libelle : '';
-        const message = `L'année ${libelle} a bien été créé.`
-        return success(res,201, annee,message);
+    .then(annee => {
+        const message = `L'annee ${req.body.libelle} a bien été créée.`
+        return success(res,201,annee,message);
     })
     .catch(error => {
         if(error instanceof ValidationError) {
-            return generateServerErrorCode(res,400,error,'Cette annéeexiste déjà.')
+            return generateServerErrorCode(res,400,error,'Cette annee existe déjà.')
         }
         if(error.code == "ER_DUP_ENTRY") {
-            return generateServerErrorCode(res,400,error,'Cette annéeexiste déjà.')
+            return generateServerErrorCode(res,400,error,'Cette annee existe déjà.')
         }
-        const message = `Le type n'a pas pu être ajouté. Réessayez dans quelques instants.`
+        const message = `La annee n'a pas pu être ajouté. Réessayez dans quelques instants.`
         return generateServerErrorCode(res,500,error,message)
     })
 }
+
 
 
 export const getAllAnneeAcademique = async (req: Request, res: Response) => {
