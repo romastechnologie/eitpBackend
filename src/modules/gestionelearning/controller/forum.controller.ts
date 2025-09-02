@@ -6,6 +6,8 @@ import { Brackets } from "typeorm";
 import { checkRelationsOneToMany } from "../../../configs/checkRelationsOneToManyBeforDelete";
 import { Forum } from "../entity/Forum";
 import { paginationAndRechercheInit } from "../../../configs/paginationAndRechercheInit";
+import { User } from "../../gestiondesutilisateurs/entity/user.entity";
+import { UserForum } from "../entity/UserForum";
 
 export const createForum = async (req: Request, res: Response) => {
     const forum = myDataSource.getRepository(Forum).create(req.body);
@@ -31,6 +33,67 @@ export const createForum = async (req: Request, res: Response) => {
         return generateServerErrorCode(res,500,error,message)
     })
 }
+
+// export const createForum = async (req: Request, res: Response) => {
+//   const forumRepo = myDataSource.getRepository(Forum);
+//   const userForumRepo = myDataSource.getRepository(UserForum);
+//   const userRepo = myDataSource.getRepository(User);
+
+//   try {
+//     await myDataSource.transaction(async (manager) => {
+//       // 1️⃣ Création du forum// 1️⃣ Création du forum
+// const { userIds, ...forumData } = req.body;
+// const forum = forumRepo.create(forumData);
+
+// const errors = await validate(forum);
+// if (errors.length > 0) {
+//   const message = validateMessage(errors);
+//   throw { status: 400, errors, message };
+// }
+
+// const savedForum: Forum = await manager.save(Forum, forum) as Forum;
+
+// // 2️⃣ Associer les utilisateurs au forum
+// if (Array.isArray(userIds) && userIds.length > 0) {
+//   const users = await userRepo.findByIds(userIds);
+
+//   if (users.length !== userIds.length) {
+//     throw {
+//       status: 400,
+//       message: "Certains utilisateurs fournis n'existent pas.",
+//     };
+//   }
+
+//   const userForums = users.map((user) =>
+//     userForumRepo.create({
+//       estActif: true,
+//       forum: savedForum,
+//       user: user,
+//     })
+//   );
+
+//   await manager.save(UserForum, userForums);
+// }
+
+// // 3️⃣ Réponse
+// const message = `Le forum ${savedForum.nom} a bien été créé avec ses utilisateurs associés.`;
+// return success(res, 201, savedForum, message);
+
+//     });
+//   } catch (error: any) {
+//     if (error?.code === "ER_DUP_ENTRY") {
+//       return generateServerErrorCode(res, 400, error, "Ce forum existe déjà.");
+//     }
+//     return generateServerErrorCode(
+//       res,
+//       error.status || 500,
+//       error,
+//       error.message ||
+//         "Le forum n'a pas pu être ajouté. Réessayez dans quelques instants."
+//     );
+//   }
+// };
+
 
 
 export const getAllForum = async (req: Request, res: Response) => {
