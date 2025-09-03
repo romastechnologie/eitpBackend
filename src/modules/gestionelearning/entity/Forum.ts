@@ -16,9 +16,9 @@ export class Forum {
     @IsNotEmpty({ message: "La description est obligatoire" })
     description: string
 
-    @Column('longtext', { nullable: false })
-    @IsNotEmpty({ message: "La date de création est obligatoire" })
-    dateCreation: string
+    // @Column('longtext', { nullable: false })
+    // @IsNotEmpty({ message: "La date de création est obligatoire" })
+    // dateCreation: string
 
     @Column({ default: true })
     statut: boolean
