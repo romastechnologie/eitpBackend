@@ -9,6 +9,8 @@ import { paginationAndRechercheInit } from "../../../configs/paginationAndRecher
 
 export const createFiliereNiveauMatiere = async (req: Request, res: Response) => {
     const filiereNiveauMatiere = myDataSource.getRepository(FiliereNiveauMatiere).create(req.body);
+
+    console.log(req.body, "hellooooo")
     const errors = await validate(filiereNiveauMatiere)
     if (errors.length > 0) {
         const message = validateMessage(errors);
@@ -17,17 +19,17 @@ export const createFiliereNiveauMatiere = async (req: Request, res: Response) =>
     await myDataSource.getRepository(FiliereNiveauMatiere).save(filiereNiveauMatiere)
     .then((filiereNiveauMatiere_ : FiliereNiveauMatiere | FiliereNiveauMatiere[]) => {
         const id = !isArray(filiereNiveauMatiere_) ? filiereNiveauMatiere_.id : '';
-        const message = `La filière ${id} a bien été créé.`
+        const message = `La filière par niveau ${id} a bien été créé.`
         return success(res,201, filiereNiveauMatiere,message);
     })
     .catch(error => {
         if(error instanceof ValidationError) {
-            return generateServerErrorCode(res,400,error,'Cette filière existe déjà.')
+            return generateServerErrorCode(res,400,error,'Cette filière par niveau existe déjà.')
         }
         if(error.code == "ER_DUP_ENTRY") {
-            return generateServerErrorCode(res,400,error,'Cette filière existe déjà.')
+            return generateServerErrorCode(res,400,error,'Cette filière par niveau existe déjà.')
         }
-        const message = `La filière n'a pas pu être ajouté. Réessayez dans quelques instants.`
+        const message = `La filière par niveau n'a pas pu être ajouté. Réessayez dans quelques instants.`
         return generateServerErrorCode(res,500,error,message)
     })
 }
@@ -37,6 +39,9 @@ export const getAllFiliereNiveauMatiere = async (req: Request, res: Response) =>
     const { page, limit, searchTerm, startIndex, searchQueries } = paginationAndRechercheInit(req, FiliereNiveauMatiere);
     let reque = await myDataSource.getRepository(FiliereNiveauMatiere)
     .createQueryBuilder('filiereNiveauMatiere')
+    .leftJoinAndSelect('filiereNiveauMatiere.filiere', "filiere")
+    .leftJoinAndSelect('filiereNiveauMatiere.matiere', "matiere")
+    .leftJoinAndSelect('filiereNiveauMatiere.niveau', "niveau")
     .where("filiereNiveauMatiere.deletedAt IS NULL");
     if (searchQueries.length > 0) {
         reque.andWhere(new Brackets(qb => {
@@ -67,14 +72,14 @@ export const getFiliereNiveauMatiere = async (req: Request, res: Response) => {
     })
     .then(filiereNiveauMatiere => {
         if(filiereNiveauMatiere === null) {
-          const message = `La filière demandé n'existe pas. Réessayez avec un autre identifiant.`
+          const message = `La filière par niveau demandé n'existe pas. Réessayez avec un autre identifiant.`
           return generateServerErrorCode(res,400,"L'id n'existe pas",message)
         }
-        const message = `La filière de méda a bien été trouvé.`
+        const message = `La filière par niveau de méda a bien été trouvé.`
         return success(res,200, filiereNiveauMatiere,message);
     })
     .catch(error => {
-        const message = `La filière n'a pas pu être récupéré. Réessayez dans quelques instants.`
+        const message = `La filière par niveau n'a pas pu être récupéré. Réessayez dans quelques instants.`
         return generateServerErrorCode(res,500,error,message)
     })
 };
@@ -101,16 +106,16 @@ export const updateFiliereNiveauMatiere = async (req: Request, res: Response) =>
         return generateServerErrorCode(res,400,errors,message)
     }
     await myDataSource.getRepository(FiliereNiveauMatiere).save(filiereNiveauMatiere).then(filiereNiveauMatiere => {
-        const message = `La filière ${filiereNiveauMatiere.id} a bien été modifié.`
+        const message = `La filière par niveau ${filiereNiveauMatiere.id} a bien été modifié.`
         return success(res,200, filiereNiveauMatiere,message);
     }).catch(error => {
         if(error instanceof ValidationError) {
-            return generateServerErrorCode(res,400,error,'Cette filière de média existe déjà')
+            return generateServerErrorCode(res,400,error,'Cette filière par niveau de média existe déjà')
         }
         if(error.code == "ER_DUP_ENTRY") {
-            return generateServerErrorCode(res,400,error,'Cette filière de média existe déjà')
+            return generateServerErrorCode(res,400,error,'Cette filière par niveau de média existe déjà')
         }
-        const message = `La filière n'a pas pu être ajouté. Réessayez dans quelques instants.`
+        const message = `La filière par niveau n'a pas pu être ajouté. Réessayez dans quelques instants.`
         return generateServerErrorCode(res,500,error,message)
         // res.status(500).json({ message, data: error }) 
     })
@@ -126,22 +131,35 @@ export const deleteFiliereNiveauMatiere = async (req: Request, res: Response) =>
         })
     .then(filiereNiveauMatiere => {        
         if(filiereNiveauMatiere === null) {
-          const message = `La filière demandé n'existe pas. Réessayez avec un autre identifiant.`
+          const message = `La filière par niveau demandé n'existe pas. Réessayez avec un autre identifiant.`
           return generateServerErrorCode(res,400,"L'id n'existe pas",message);
         }
 
         if(resultat){
-            const message = `Cette filière de média est lié à d'autres enregistrements. Vous ne pouvez pas le supprimer.`
-            return generateServerErrorCode(res,400,"Cette filière de média est lié à d'autres enregistrements. Vous ne pouvez pas le supprimer.",message);
+            const message = `Cette filière par niveau de média est lié à d'autres enregistrements. Vous ne pouvez pas le supprimer.`
+            return generateServerErrorCode(res,400,"Cette filière par niveau de média est lié à d'autres enregistrements. Vous ne pouvez pas le supprimer.",message);
         }else{
             myDataSource.getRepository(FiliereNiveauMatiere).softRemove(filiereNiveauMatiere)
             .then(_ => {
-                const message = `La filière avec l'identifiant n°${filiereNiveauMatiere.id} a bien été supprimé.`;
+                const message = `La filière par niveau avec l'identifiant n°${filiereNiveauMatiere.id} a bien été supprimé.`;
                 return success(res,200, filiereNiveauMatiere,message);
             })
         }
     }).catch(error => {
-        const message = `La filière n'a pas pu être supprimé. Réessayez dans quelques instants.`
+        const message = `La filière par niveau n'a pas pu être supprimé. Réessayez dans quelques instants.`
         return generateServerErrorCode(res,500,error,message)
     })
 }
+export const getAllFiliereNiveauMatieres= async (req: Request, res: Response) => {
+    await myDataSource.getRepository(FiliereNiveauMatiere).find({
+       
+    })
+    .then((retour) => {
+        const message = 'La liste des filières par niveau a bien été récupérée.';
+        return success(res,200,{data:retour}, message);
+    }).catch(error => {
+        const message = `La liste des filières par niveau n'a pas pu être récupérée. Réessayez dans quelques instants.`
+        //res.status(500).json({ message, data: error })
+        return generateServerErrorCode(res,500,error,message)
+    })
+};

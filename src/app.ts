@@ -43,6 +43,13 @@ import { questionsRoutes } from "./modules/gestionelearning/route/question.route
 import { reponseRoutes } from "./modules/gestionelearning/route/reponse.route";
 import { propositionReponseRoutes } from "./modules/gestionelearning/route/propositionreponse.route";
 import { niveauxRoutes } from "./modules/gestionelearning/route/niveau.route";
+import { typeEmploiDuTempsRoutes } from "./modules/gestionsolidarite/route/typeEmploiDuTemps";
+import { qualificationsRoutes } from "./modules/gestionsolidarite/route/qualification.route";
+import { languesRoutes } from "./modules/gestionsolidarite/route/langue.route";
+import { activitesRoutes } from "./modules/gestionsolidarite/route/activite.route";
+import { classesRoutes } from "./modules/gestionsolidarite/route/classe.route";
+import { categorieOffresRoutes } from "./modules/gestionsolidarite/route/categorieOffre.route";
+import { filiereNiveauMatieresRoutes } from "./modules/gestionelearning/route/filiereniveaumatiere.route";
 
 
 require("dotenv").config();
@@ -181,7 +188,15 @@ questionsRoutes(app);
 reponseRoutes(app);
 propositionReponseRoutes(app);
 niveauxRoutes(app);
+filiereNiveauMatieresRoutes(app);
 
+//solidarité
+typeEmploiDuTempsRoutes(app);
+qualificationsRoutes(app);
+languesRoutes(app);
+activitesRoutes(app);
+classesRoutes(app);
+categorieOffresRoutes(app);
 
 
 //Autorisation des entêtes
