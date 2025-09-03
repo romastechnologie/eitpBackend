@@ -9,6 +9,8 @@ import { paginationAndRechercheInit } from "../../../configs/paginationAndRecher
 
 export const createFiliereNiveauMatiere = async (req: Request, res: Response) => {
     const filiereNiveauMatiere = myDataSource.getRepository(FiliereNiveauMatiere).create(req.body);
+
+    console.log(req.body, "hellooooo")
     const errors = await validate(filiereNiveauMatiere)
     if (errors.length > 0) {
         const message = validateMessage(errors);
@@ -37,6 +39,9 @@ export const getAllFiliereNiveauMatiere = async (req: Request, res: Response) =>
     const { page, limit, searchTerm, startIndex, searchQueries } = paginationAndRechercheInit(req, FiliereNiveauMatiere);
     let reque = await myDataSource.getRepository(FiliereNiveauMatiere)
     .createQueryBuilder('filiereNiveauMatiere')
+    .leftJoinAndSelect('filiereNiveauMatiere.filiere', "filiere")
+    .leftJoinAndSelect('filiereNiveauMatiere.matiere', "matiere")
+    .leftJoinAndSelect('filiereNiveauMatiere.niveau', "niveau")
     .where("filiereNiveauMatiere.deletedAt IS NULL");
     if (searchQueries.length > 0) {
         reque.andWhere(new Brackets(qb => {

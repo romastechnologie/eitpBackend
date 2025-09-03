@@ -16,9 +16,9 @@ export class FiliereNiveauMatiere {
     @IsNotEmpty({ message: "Le coefficient est obligatoire" })
     coefficient: number
 
-    @Column({ nullable: false })
-    @IsNotEmpty({ message: "Le statut est obligatoire" })
-    statut: boolean
+    // @Column({ nullable: false })
+    // @IsNotEmpty({ message: "Le statut est obligatoire" })
+    // statut: boolean
 
     @ManyToOne(() => Filiere, (filiere) => filiere.filiereNiveauMatieres)
     filiere: Filiere

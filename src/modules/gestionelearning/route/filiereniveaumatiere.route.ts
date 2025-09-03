@@ -1,5 +1,5 @@
 import * as express from 'express';
-import { createFiliereNiveauMatiere, deleteFiliereNiveauMatiere, getAllFiliereNiveauMatiere, getAllFiliereNiveauMatieres, getFiliereNiveauMatiere, updateFiliereNiveauMatiere } from '../controller/filiereNiveauMatiere.controller';
+import { createFiliereNiveauMatiere, deleteFiliereNiveauMatiere, getAllFiliereNiveauMatiere, getAllFiliereNiveauMatieres, getFiliereNiveauMatiere, updateFiliereNiveauMatiere } from '../controller/filiereniveaumatiere.controller';
 import { checkPermission } from '../../../middlewares/auth.middleware';
 
 export const filiereNiveauMatieresRoutes = (router: express.Router) => {
