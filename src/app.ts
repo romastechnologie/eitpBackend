@@ -49,6 +49,7 @@ import { languesRoutes } from "./modules/gestionsolidarite/route/langue.route";
 import { activitesRoutes } from "./modules/gestionsolidarite/route/activite.route";
 import { classesRoutes } from "./modules/gestionsolidarite/route/classe.route";
 import { categorieOffresRoutes } from "./modules/gestionsolidarite/route/categorieOffre.route";
+import { filiereNiveauMatieresRoutes } from "./modules/gestionelearning/route/filiereniveaumatiere.route";
 
 
 require("dotenv").config();
@@ -187,6 +188,7 @@ questionsRoutes(app);
 reponseRoutes(app);
 propositionReponseRoutes(app);
 niveauxRoutes(app);
+filiereNiveauMatieresRoutes(app);
 
 //solidarité
 typeEmploiDuTempsRoutes(app);
