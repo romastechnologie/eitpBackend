@@ -6,8 +6,6 @@ import { Brackets } from "typeorm";
 import { checkRelationsOneToMany } from "../../../configs/checkRelationsOneToManyBeforDelete";
 import { Forum } from "../entity/Forum";
 import { paginationAndRechercheInit } from "../../../configs/paginationAndRechercheInit";
-import { User } from "../../gestiondesutilisateurs/entity/user.entity";
-import { UserForum } from "../entity/UserForum";
 
 export const createForum = async (req: Request, res: Response) => {
     const forum = myDataSource.getRepository(Forum).create(req.body);
