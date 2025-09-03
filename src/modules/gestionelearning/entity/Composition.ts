@@ -19,7 +19,7 @@ export class Composition {
 
     @Column({ nullable: false })
     @IsNotEmpty({ message: "Le titre est obligatoire" })
-    titre: Date
+    titre: string
 
     @ManyToOne(() => Professeur, (professeur) => professeur.compositions)
     professeur: Professeur

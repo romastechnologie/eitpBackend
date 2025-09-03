@@ -18,7 +18,7 @@ export const createComposition = async (req: Request, res: Response) => {
     .then((composition_ : Composition | Composition[]) => {
         const titre = !isArray(composition_) ? composition_.titre : '';
         const message = `La composition ${titre} a bien été créé.`
-        return success(res,201, composition,message);
+        return success(res,201, composition_,message);
     })
     .catch(error => {
         if(error instanceof ValidationError) {
