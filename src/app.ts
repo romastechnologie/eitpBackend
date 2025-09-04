@@ -50,6 +50,7 @@ import { activitesRoutes } from "./modules/gestionsolidarite/route/activite.rout
 import { classesRoutes } from "./modules/gestionsolidarite/route/classe.route";
 import { categorieOffresRoutes } from "./modules/gestionsolidarite/route/categorieOffre.route";
 import { filiereNiveauMatieresRoutes } from "./modules/gestionelearning/route/filiereniveaumatiere.route";
+import { offresRoutes } from "./modules/gestionsolidarite/route/offre.route";
 
 
 require("dotenv").config();
@@ -197,6 +198,7 @@ languesRoutes(app);
 activitesRoutes(app);
 classesRoutes(app);
 categorieOffresRoutes(app);
+offresRoutes(app);
 
 
 //Autorisation des entêtes

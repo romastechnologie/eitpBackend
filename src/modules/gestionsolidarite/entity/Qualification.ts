@@ -17,11 +17,7 @@ export class Qualification {
     @IsNotEmpty({ message: "Le libellé est obligatoire" })
     libelle: string
 
-    // @OneToMany(() => Inscription, inscription => inscription.niveau)
-    // inscriptions: Inscription[];
-
-    // @OneToMany(() => FiliereNiveauMatiere, filiereNiveauMatiere => filiereNiveauMatiere.niveau)
-    // filiereNiveauMatieres: FiliereNiveauMatiere[];
+    
 
     @CreateDateColumn()
     createdAt: Timestamp
