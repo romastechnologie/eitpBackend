@@ -7,32 +7,82 @@ import { checkRelationsOneToMany } from "../../../configs/checkRelationsOneToMan
 import { FiliereNiveauMatiere } from "../entity/FiliereNiveauMatiere";
 import { paginationAndRechercheInit } from "../../../configs/paginationAndRechercheInit";
 
-export const createFiliereNiveauMatiere = async (req: Request, res: Response) => {
-    const filiereNiveauMatiere = myDataSource.getRepository(FiliereNiveauMatiere).create(req.body);
+// export const createFiliereNiveauMatiere = async (req: Request, res: Response) => {
+//     const filiereNiveauMatiere = myDataSource.getRepository(FiliereNiveauMatiere).create(req.body);
 
-    console.log(req.body, "hellooooo")
-    const errors = await validate(filiereNiveauMatiere)
+//     console.log(req.body, "hellooooo")
+//     const errors = await validate(filiereNiveauMatiere)
+//     if (errors.length > 0) {
+//         const message = validateMessage(errors);
+//         return generateServerErrorCode(res,400,errors,message)
+//     }
+//     await myDataSource.getRepository(FiliereNiveauMatiere).save(filiereNiveauMatiere)
+//     .then((filiereNiveauMatiere_ : FiliereNiveauMatiere | FiliereNiveauMatiere[]) => {
+//         const id = !isArray(filiereNiveauMatiere_) ? filiereNiveauMatiere_.id : '';
+//         const message = `La filière par niveau ${id} a bien été créé.`
+//         return success(res,201, filiereNiveauMatiere,message);
+//     })
+//     .catch(error => {
+//         if(error instanceof ValidationError) {
+//             return generateServerErrorCode(res,400,error,'Cette filière par niveau existe déjà.')
+//         }
+//         if(error.code == "ER_DUP_ENTRY") {
+//             return generateServerErrorCode(res,400,error,'Cette filière par niveau existe déjà.')
+//         }
+//         const message = `La filière par niveau n'a pas pu être ajouté. Réessayez dans quelques instants.`
+//         return generateServerErrorCode(res,500,error,message)
+//     })
+// }
+
+export const createFiliereNiveauMatiere = async (req: Request, res: Response) => {
+  const repo = myDataSource.getRepository(FiliereNiveauMatiere);
+
+  try {
+    // On récupère les données envoyées
+    const { filiere, niveau, matiere, coefficient } = req.body;
+
+    // On rend inactifs tous les anciens pour la même filiere+niveau+matiere
+    await repo
+      .createQueryBuilder()
+      .update(FiliereNiveauMatiere)
+      .set({ statut: 0 })
+      .where("filiereId = :filiereId", { filiereId: filiere })
+      .andWhere("niveauId = :niveauId", { niveauId: niveau })
+      .andWhere("matiereId = :matiereId", { matiereId: matiere })
+      .execute();
+
+    // Création de la nouvelle avec statut actif
+    const filiereNiveauMatiere = repo.create({
+      filiere,
+      niveau,
+      matiere,
+      coefficient,
+      statut: 1
+    });
+
+    const errors = await validate(filiereNiveauMatiere);
     if (errors.length > 0) {
-        const message = validateMessage(errors);
-        return generateServerErrorCode(res,400,errors,message)
+      const message = validateMessage(errors);
+      return generateServerErrorCode(res, 400, errors, message);
     }
-    await myDataSource.getRepository(FiliereNiveauMatiere).save(filiereNiveauMatiere)
-    .then((filiereNiveauMatiere_ : FiliereNiveauMatiere | FiliereNiveauMatiere[]) => {
-        const id = !isArray(filiereNiveauMatiere_) ? filiereNiveauMatiere_.id : '';
-        const message = `La filière par niveau ${id} a bien été créé.`
-        return success(res,201, filiereNiveauMatiere,message);
-    })
-    .catch(error => {
-        if(error instanceof ValidationError) {
-            return generateServerErrorCode(res,400,error,'Cette filière par niveau existe déjà.')
-        }
-        if(error.code == "ER_DUP_ENTRY") {
-            return generateServerErrorCode(res,400,error,'Cette filière par niveau existe déjà.')
-        }
-        const message = `La filière par niveau n'a pas pu être ajouté. Réessayez dans quelques instants.`
-        return generateServerErrorCode(res,500,error,message)
-    })
-}
+
+    const saved = await repo.save(filiereNiveauMatiere);
+
+    const message = `La filière par niveau ${saved.id} a bien été créée et est maintenant active.`;
+    return success(res, 201, saved, message);
+
+  } catch (error: any) {
+    if (error instanceof ValidationError) {
+      return generateServerErrorCode(res, 400, error, "Cette filière par niveau existe déjà.");
+    }
+    if (error.code === "ER_DUP_ENTRY") {
+      return generateServerErrorCode(res, 400, error, "Cette filière par niveau existe déjà.");
+    }
+    const message = `La filière par niveau n'a pas pu être ajoutée. Réessayez dans quelques instants.`;
+    return generateServerErrorCode(res, 500, error, message);
+  }
+};
+
 
 
 export const getAllFiliereNiveauMatiere = async (req: Request, res: Response) => {

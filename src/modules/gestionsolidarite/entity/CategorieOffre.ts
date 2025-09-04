@@ -1,6 +1,7 @@
 
 import { IsNotEmpty } from "class-validator";
 import { Column, CreateDateColumn, DeleteDateColumn, Entity, JoinColumn, ManyToOne, OneToMany, PrimaryGeneratedColumn, Timestamp, UpdateDateColumn } from "typeorm";
+import { Offre } from "./Offre";
 
 
 
@@ -17,11 +18,8 @@ export class CategorieOffre {
     @IsNotEmpty({ message: "Le libellé est obligatoire" })
     libelle: string
 
-    // @OneToMany(() => Inscription, inscription => inscription.niveau)
-    // inscriptions: Inscription[];
-
-    // @OneToMany(() => FiliereNiveauMatiere, filiereNiveauMatiere => filiereNiveauMatiere.niveau)
-    // filiereNiveauMatieres: FiliereNiveauMatiere[];
+    @OneToMany(() => Offre, offre => offre.categorieOffre)
+    offres: Offre[];
 
     @CreateDateColumn()
     createdAt: Timestamp

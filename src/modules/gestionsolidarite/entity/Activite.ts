@@ -17,7 +17,6 @@ export class Activite {
     @IsNotEmpty({ message: "Le libellé est obligatoire" })
     libelle: string
 
-
     @CreateDateColumn()
     createdAt: Timestamp
 
