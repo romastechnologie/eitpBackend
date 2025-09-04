@@ -13,13 +13,13 @@ export class Composition {
     @PrimaryGeneratedColumn()
     id: number
 
-    @Column({ unique: true, nullable: false })
+    @Column({ nullable: false })
     @IsNotEmpty({ message: "La date est obligatoire" })
-    dateCompostion: Date
+    dateComposition: Date
 
-    @Column({ unique: true, nullable: false })
+    @Column({ nullable: false })
     @IsNotEmpty({ message: "Le titre est obligatoire" })
-    titre: Date
+    titre: string
 
     @ManyToOne(() => Professeur, (professeur) => professeur.compositions)
     professeur: Professeur
@@ -48,3 +48,5 @@ export class Composition {
     @DeleteDateColumn()
     deletedAt: Timestamp;
 }
+
+

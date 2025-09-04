@@ -10,59 +10,59 @@ import { checkRelationsOneToMany } from "../../../configs/checkRelationsOneToMan
 
 // Créer une question
 export const createQuestion = async (req: Request, res: Response) => {
-    const { contenu, type, propositions } = req.body;
+    const { contenu, type, propositions, reponse } = req.body;
 
     if (!contenu || !type) {
         return generateServerErrorCode(res, 400, null, "Le contenu et le type de la question sont obligatoires");
     }
 
-    if (!propositions || !Array.isArray(propositions)) {
-        return generateServerErrorCode(res, 400, "ValidationError", "Les propositions sont obligatoires et doivent être un tableau.");
-    }
+    // if (type === 'QCM' && (!propositions || !Array.isArray(propositions))) {
+    //     return generateServerErrorCode(res, 400, "ValidationError", "Les propositions sont obligatoires et doivent être un tableau pour les questions QCM.");
+    // }
 
     try {
         const question = await myDataSource.transaction(async transactionalEntityManager => {
-            // Créer la question
             const question = transactionalEntityManager.getRepository(Question).create({
                 contenu,
                 type,
-                propositions: [],
+                reponse: type === 'QuestionsReponses' && reponse ? reponse : undefined, // Gérer le champ reponse
+                // userCreation: req.user, // Assurez-vous que req.user est défini
             });
 
-            // Valider la question
             const errors = await validate(question);
             if (errors.length > 0) {
                 const message = validateMessage(errors);
                 throw new Error(message);
             }
 
-            // Enregistrer la question
             const savedQuestion = await transactionalEntityManager.getRepository(Question).save(question);
 
-            // Créer les propositions
-            for (const propositionData of propositions) {
-                if (!propositionData.contenu) {
-                    throw new Error("Chaque proposition doit avoir un contenu.");
+            if (type === 'QCM' && Array.isArray(propositions) && propositions.length > 0) {
+                for (const propositionData of propositions) {
+                    if (!propositionData.contenu) {
+                        throw new Error("Chaque proposition doit avoir un contenu.");
+                    }
+
+                    const proposition = new PropositionReponse();
+                    proposition.contenu = propositionData.contenu;
+                    proposition.estLaBonneReponse = propositionData.estLaBonneReponse || false;
+                    proposition.question = savedQuestion;
+
+                    await transactionalEntityManager.save(PropositionReponse, proposition);
                 }
-
-                const proposition = new PropositionReponse();
-                proposition.contenu = propositionData.contenu;
-                proposition.estLaBonneReponse = propositionData.estLaBonneReponse || false;
-                proposition.question = savedQuestion;
-
-                await transactionalEntityManager.save(PropositionReponse, proposition);
             }
 
             return savedQuestion;
         });
 
-        const message = `La question ${req.body.contenu} a bien été créée avec ses propositions.`;
+        const message = `La question ${req.body.contenu} a bien été créée.`;
         return success(res, 201, question, message);
     } catch (error: any) {
         const message = error.message || "La question n'a pas pu être ajoutée. Réessayez dans quelques instants.";
         return generateServerErrorCode(res, 500, error, message);
     }
 };
+
 
 //  Récupérer toutes les questions
 export const getAllQuestions = async (req: Request, res: Response) => {
@@ -144,26 +144,52 @@ export const updateQuestion = async (req: Request, res: Response) => {
 
 // PropositionReponse Supprimer une question
 export const deleteQuestion = async (req: Request, res: Response) => {
-    const resultat = await checkRelationsOneToMany('Question', parseInt(req.params.id));
-    await myDataSource.getRepository(Question).findOneBy({ id: parseInt(req.params.id) }).then(question => {
+    try {
+        const questionRepository = myDataSource.getRepository(Question);
+        const question = await questionRepository.findOne({
+            where: { id: parseInt(req.params.id) },
+            relations: ["compoQuestions", "propositions", "reponses", "filiereNiveauMatieres"],
+        });
+
         if (!question) {
             const message = `La question demandée n'existe pas. Réessayez avec un autre identifiant.`;
             return generateServerErrorCode(res, 400, "L'id n'existe pas", message);
         }
-        if (resultat) {
-            const message = `Cette question est liée à d'autres enregistrements. Vous ne pouvez pas la supprimer.`;
-            return generateServerErrorCode(res, 400, "Cette question est liée à d'autres enregistrements. Vous ne pouvez pas la supprimer.", message);
-        } else {
-            myDataSource.getRepository(Question).softRemove(question)
-                .then(_ => {
-                    const message = `La question ${question.contenu} a bien été supprimée.`;
-                    return success(res, 200, question, message);
-                });
-        }
-    }).catch(error => {
+
+        // Soft delete des relations
+        await myDataSource.getRepository("CompositionQuestion")
+            .createQueryBuilder()
+            .softDelete()
+            .where("question_id = :id", { id: parseInt(req.params.id) })
+            .execute();
+
+        await myDataSource.getRepository("PropositionReponse")
+            .createQueryBuilder()
+            .softDelete()
+            .where("question_id = :id", { id: parseInt(req.params.id) })
+            .execute();
+
+        await myDataSource.getRepository("Reponse")
+            .createQueryBuilder()
+            .softDelete()
+            .where("question_id = :id", { id: parseInt(req.params.id) })
+            .execute();
+
+        await myDataSource.getRepository("FiliereNiveauMatiere")
+            .createQueryBuilder()
+            .softDelete()
+            .where("question_id = :id", { id: parseInt(req.params.id) })
+            .execute();
+
+        // Soft delete de la question
+        await questionRepository.softRemove(question);
+
+        const message = `La question ${question.contenu} a bien été supprimée.`;
+        return success(res, 200, question, message);
+    } catch (error) {
         const message = `La question n'a pas pu être supprimée. Réessayez dans quelques instants.`;
         return generateServerErrorCode(res, 500, error, message);
-    });
+    }
 };
 
 // PropositionReponse Récupérer uniquement les propositions d'une question
