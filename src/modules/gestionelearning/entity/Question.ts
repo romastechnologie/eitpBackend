@@ -21,6 +21,9 @@ export class Question {
     @IsNotEmpty({ message: "Le type est obligatoire" })
     type: string;
 
+    @Column({ nullable: true }) 
+    reponse?: string;
+
     @ManyToOne(() => User)
     userCreation: User;
 
