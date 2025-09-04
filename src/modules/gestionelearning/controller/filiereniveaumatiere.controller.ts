@@ -36,29 +36,49 @@ export const createFiliereNiveauMatiere = async (req: Request, res: Response) =>
 
 
 export const getAllFiliereNiveauMatiere = async (req: Request, res: Response) => {
-    const { page, limit, searchTerm, startIndex, searchQueries } = paginationAndRechercheInit(req, FiliereNiveauMatiere);
-    let reque = await myDataSource.getRepository(FiliereNiveauMatiere)
+  const { page, limit, searchTerm, startIndex, searchQueries } = paginationAndRechercheInit(req, FiliereNiveauMatiere);
+  const { filiere, niveau, matiere } = req.query; // Récupérer les paramètres de requête
+
+  let query = myDataSource.getRepository(FiliereNiveauMatiere)
     .createQueryBuilder('filiereNiveauMatiere')
-    .leftJoinAndSelect('filiereNiveauMatiere.filiere', "filiere")
-    .leftJoinAndSelect('filiereNiveauMatiere.matiere', "matiere")
-    .leftJoinAndSelect('filiereNiveauMatiere.niveau', "niveau")
-    .where("filiereNiveauMatiere.deletedAt IS NULL");
-    if (searchQueries.length > 0) {
-        reque.andWhere(new Brackets(qb => {
-            qb.where(searchQueries.join(' OR '), { keyword: `%${searchTerm}%` })
-        }));
-    }
-    reque.skip(startIndex)
-    .take(limit)
-    .getManyAndCount()
-    .then(([data, totalElements]) => {
-        const message = 'La liste des filières par niveau a bien été récupérée.';
-        const totalPages = Math.ceil(totalElements / limit);
-        return success(res,200,{data, totalPages, totalElements, limit}, message);
-    }).catch(error => {
-        const message = `La liste des filières par niveau n'a pas pu être récupérée. Réessayez dans quelques instants.`
-        return generateServerErrorCode(res,500,error,message)
-    })
+    .leftJoinAndSelect('filiereNiveauMatiere.filiere', 'filiere')
+    .leftJoinAndSelect('filiereNiveauMatiere.matiere', 'matiere')
+    .leftJoinAndSelect('filiereNiveauMatiere.niveau', 'niveau')
+    .where('filiereNiveauMatiere.deletedAt IS NULL');
+
+  // Ajouter des filtres pour filiere, niveau, et matiere si présents
+  if (filiere) {
+    query = query.andWhere('filiereNiveauMatiere.filiere.id = :filiere', { filiere });
+  }
+  if (niveau) {
+    query = query.andWhere('filiereNiveauMatiere.niveau.id = :niveau', { niveau });
+  }
+  if (matiere) {
+    query = query.andWhere('filiereNiveauMatiere.matiere.id = :matiere', { matiere });
+  }
+
+  // Ajouter la recherche par mot-clé si searchTerm est fourni
+  if (searchQueries.length > 0) {
+    query.andWhere(
+      new Brackets(qb => {
+        qb.where(searchQueries.join(' OR '), { keyword: `%${searchTerm}%` });
+      })
+    );
+  }
+
+  try {
+    const [data, totalElements] = await query
+      .skip(startIndex)
+      .take(limit)
+      .getManyAndCount();
+
+    const message = 'La liste des filières par niveau a bien été récupérée.';
+    const totalPages = Math.ceil(totalElements / limit);
+    return success(res, 200, { data, totalPages, totalElements, limit }, message);
+  } catch (error) {
+    const message = `La liste des filières par niveau n'a pas pu être récupérée. Réessayez dans quelques instants.`;
+    return generateServerErrorCode(res, 500, error, message);
+  }
 };
 
 export const getFiliereNiveauMatiere = async (req: Request, res: Response) => {

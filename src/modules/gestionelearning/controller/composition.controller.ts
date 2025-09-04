@@ -35,26 +35,40 @@ export const createComposition = async (req: Request, res: Response) => {
 
 export const getAllComposition = async (req: Request, res: Response) => {
     const { page, limit, searchTerm, startIndex, searchQueries } = paginationAndRechercheInit(req, Composition);
-    let reque = await myDataSource.getRepository(Composition)
-    .createQueryBuilder('composition')
-    .where("composition.deletedAt IS NULL");
-    if (searchQueries.length > 0) {
-        reque.andWhere(new Brackets(qb => {
-            qb.where(searchQueries.join(' OR '), { keyword: `%${searchTerm}%` })
-        }));
-    }
-    reque.skip(startIndex)
-    .take(limit)
-    .getManyAndCount()
-    .then(([data, totalElements]) => {
+
+    try {
+        let reque = await myDataSource.getRepository(Composition)
+  .createQueryBuilder('composition')
+  .leftJoinAndSelect('composition.professeur', 'professeur')
+  .leftJoinAndSelect('composition.annee', 'annee')
+  .leftJoinAndSelect('composition.filiereNiveauMatiere', 'filiereNiveauMatiere')
+  .leftJoinAndSelect('filiereNiveauMatiere.filiere', 'filiere')
+  .leftJoinAndSelect('filiereNiveauMatiere.niveau', 'niveau')
+  .leftJoinAndSelect('filiereNiveauMatiere.matiere', 'matiere')
+  .where("composition.deletedAt IS NULL");
+
+
+        if (searchQueries.length > 0) {
+            reque.andWhere(new Brackets(qb => {
+                qb.where(searchQueries.join(' OR '), { keyword: `%${searchTerm}%` })
+            }));
+        }
+
+        const [data, totalElements] = await reque
+            .skip(startIndex)
+            .take(limit)
+            .getManyAndCount();
+
         const message = 'La liste des compositions a bien été récupérée.';
         const totalPages = Math.ceil(totalElements / limit);
-        return success(res,200,{data, totalPages, totalElements, limit}, message);
-    }).catch(error => {
-        const message = `La liste des compositions n'a pas pu être récupérée. Réessayez dans quelques instants.`
-        return generateServerErrorCode(res,500,error,message)
-    })
+        return success(res, 200, { data, totalPages, totalElements, limit }, message);
+
+    } catch (error) {
+        const message = `La liste des compositions n'a pas pu être récupérée. Réessayez dans quelques instants.`;
+        return generateServerErrorCode(res, 500, error, message);
+    }
 };
+
 
 export const getComposition = async (req: Request, res: Response) => {
     await myDataSource.getRepository(Composition).findOne({

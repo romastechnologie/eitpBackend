@@ -21,6 +21,10 @@ export class Composition {
     @IsNotEmpty({ message: "Le titre est obligatoire" })
     titre: string
 
+    @Column({ nullable: false })
+    @IsNotEmpty({ message: "Le type de la question est obligatoire" })
+    type: string;
+
     @ManyToOne(() => Professeur, (professeur) => professeur.compositions)
     professeur: Professeur
 
