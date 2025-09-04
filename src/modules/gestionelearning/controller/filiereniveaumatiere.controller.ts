@@ -118,7 +118,11 @@ export const getFiliereNiveauMatiere = async (req: Request, res: Response) => {
             id: parseInt(req.params.id),
         },
         relations: {
-            //professeur:true,
+            filiere:true,
+            matiere:true,
+            niveau:true,
+            question:true
+
     },
     })
     .then(filiereNiveauMatiere => {
@@ -143,7 +147,10 @@ export const updateFiliereNiveauMatiere = async (req: Request, res: Response) =>
             id: parseInt(req.params.id),
         },
         relations: {
-            //professeur:true,
+            filiere:true,
+            matiere:true,
+            niveau:true,
+            question:true
         },
     }
     )
