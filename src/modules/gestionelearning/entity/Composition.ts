@@ -34,8 +34,13 @@ export class Composition {
     @ManyToOne(() => AnneeAcademique, (annee) => annee.compositions)
     annee: AnneeAcademique
 
-    @ManyToOne(() => FiliereNiveauMatiere, (filiereNiveauMatiere) => filiereNiveauMatiere.compositions)
+     @ManyToOne(() => FiliereNiveauMatiere, (filiereNiveauMatiere) => filiereNiveauMatiere.compositions)
+    @JoinColumn({ name: 'filiereNiveauMatiereId' }) 
     filiereNiveauMatiere: FiliereNiveauMatiere
+
+    @Column({ nullable: true })
+    filiereNiveauMatiereId: number
+
 
     @OneToMany(() => CompositionQuestion, compoQuestion => compoQuestion.composition)
     compoQuestions: CompositionQuestion[];
