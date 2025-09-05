@@ -6,6 +6,7 @@ import { Brackets } from "typeorm";
 import { checkRelationsOneToMany } from "../../../configs/checkRelationsOneToManyBeforDelete";
 import { Composition } from "../entity/Composition";
 import { paginationAndRechercheInit } from "../../../configs/paginationAndRechercheInit";
+import { FiliereNiveauMatiere } from "../entity/FiliereNiveauMatiere";
 
 export const createComposition = async (req: Request, res: Response) => {
     const composition = myDataSource.getRepository(Composition).create(req.body);
@@ -159,3 +160,52 @@ export const deleteComposition = async (req: Request, res: Response) => {
         return generateServerErrorCode(res,500,error,message)
     })
 }
+
+// export const getAllFiliereNiveauMatieres = async (req: Request, res: Response) => {
+//     const { filiere, niveau } = req.query;
+
+//     if (!filiere || !niveau) {
+//         return generateServerErrorCode(res, 400, null, "Les paramètres filiere et niveau sont requis.");
+//     }
+
+//     const { page, limit, searchTerm, startIndex, searchQueries } = paginationAndRechercheInit(req, FiliereNiveauMatiere);
+
+//     try {
+//         let query = myDataSource.getRepository(FiliereNiveauMatiere)
+//             .createQueryBuilder('filiereNiveauMatiere')
+//             .leftJoinAndSelect('filiereNiveauMatiere.filiere', 'filiere')
+//             .leftJoinAndSelect('filiereNiveauMatiere.niveau', 'niveau')
+//             .leftJoinAndSelect('filiereNiveauMatiere.matiere', 'matiere')
+//             .where('filiereNiveauMatiere.deletedAt IS NULL')
+//             .andWhere('filiereNiveauMatiere.statut = :statut', { statut: 1 })
+//             .andWhere('filiere.deletedAt IS NULL')
+//             .andWhere('niveau.deletedAt IS NULL')
+//             .andWhere('matiere.deletedAt IS NULL')
+//             .andWhere('filiere.id = :filiereId', { filiereId: parseInt(filiere as string) })
+//             .andWhere('niveau.id = :niveauId', { niveauId: parseInt(niveau as string) });
+
+//         if (searchQueries.length > 0) {
+//             query = query.andWhere(new Brackets(qb => {
+//                 qb.where(searchQueries.join(' OR '), { keyword: `%${searchTerm}%` });
+//             }));
+//         }
+
+//         const [data, totalElements] = await query
+//             .skip(startIndex)
+//             .take(limit)
+//             .getManyAndCount();
+
+//         if (data.length === 0) {
+//             return success(res, 200, { data: [], totalPages: 0, totalElements: 0, limit }, "Aucune matière trouvée pour cette combinaison filière-niveau.");
+//         }
+
+//         const message = 'Liste des combinaisons filière-niveau-matière récupérée avec succès.';
+//         const totalPages = Math.ceil(totalElements / limit);
+//         return success(res, 200, { data, totalPages, totalElements, limit }, message);
+
+//     } catch (error) {
+//         console.error('Erreur lors de la récupération des combinaisons:', error);
+//         const message = 'Impossible de récupérer les combinaisons filière-niveau-matière.';
+//         return generateServerErrorCode(res, 500, error, message);
+//     }
+// };

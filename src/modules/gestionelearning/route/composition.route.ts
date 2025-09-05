@@ -15,4 +15,5 @@ export  const compositionsRoutes =  (router: express.Router) => {
     router.get('/api/compositions/:id', getComposition);
     router.delete('/api/compositions/:id', deleteComposition);
     router.put('/api/compositions/:id', updateComposition);
+    // router.get('/filiereNiveauMatieres', getAllFiliereNiveauMatieres);
 };
