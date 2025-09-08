@@ -41,7 +41,6 @@ export class Composition {
     @Column({ nullable: true })
     filiereNiveauMatiereId: number
 
-
     @OneToMany(() => CompositionQuestion, compoQuestion => compoQuestion.composition)
     compoQuestions: CompositionQuestion[];
 

@@ -7,31 +7,79 @@ import { checkRelationsOneToMany } from "../../../configs/checkRelationsOneToMan
 import { Composition } from "../entity/Composition";
 import { paginationAndRechercheInit } from "../../../configs/paginationAndRechercheInit";
 import { FiliereNiveauMatiere } from "../entity/FiliereNiveauMatiere";
+import { DataSource } from "typeorm";
+import { Question } from "../entity/Question";
+import { CompositionQuestion } from "../entity/CompositionQuestion";
+import { Reponse } from "../entity/Reponse";
 
 export const createComposition = async (req: Request, res: Response) => {
-    const composition = myDataSource.getRepository(Composition).create(req.body);
-    const errors = await validate(composition)
-    if (errors.length > 0) {
-        const message = validateMessage(errors);
-        return generateServerErrorCode(res,400,errors,message)
+    const { titre, dateComposition, professeur, annee, type, filiereNiveauMatiere, compoQuestions } = req.body;
+
+    const queryRunner = myDataSource.createQueryRunner();
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
+
+    try {
+        let composition = queryRunner.manager.create(Composition, {
+            titre,
+            dateComposition,
+            professeur,
+            annee,
+            type,
+            filiereNiveauMatiere
+        });
+
+        const errors = await validate(composition);
+        if (errors.length > 0) {
+            const message = errors.map(e => Object.values(e.constraints || {}).join(", ")).join("; ");
+            return generateServerErrorCode(res, 400, errors, message);
+        }
+
+        composition = await queryRunner.manager.save(composition);
+
+        // Parcourir les questions et leurs réponses
+        for (const cq of compoQuestions) {
+            if (!cq.question?.id) continue;
+
+            const question = await queryRunner.manager.findOne(Question, { where: { id: cq.question.id } });
+            if (!question) continue;
+
+            const compositionQuestion = queryRunner.manager.create(CompositionQuestion, {
+                composition,
+                question,
+                estActif: true
+            });
+
+            await queryRunner.manager.save(compositionQuestion);
+
+            // Ici on enregistre les réponses liées à cette question
+            if (cq.reponses && cq.reponses.length > 0) {
+                for (const rep of cq.reponses) {
+                    const reponse = queryRunner.manager.create(Reponse, {
+                        contenu: rep.contenu,
+                        question: question,
+                        composition: composition,
+                        user: rep.userId ? { id: rep.userId } : undefined  // optionnel
+                    });
+
+                    await queryRunner.manager.save(reponse);
+                }
+            }
+        }
+
+        await queryRunner.commitTransaction();
+        return success(res, 201, composition, `La composition "${composition.titre}" a bien été créée avec ses questions et réponses.`);
+
+    } catch (error: any) {
+        await queryRunner.rollbackTransaction();
+        if (error.code === "ER_DUP_ENTRY") {
+            return generateServerErrorCode(res, 400, error, "Cette entrée existe déjà.");
+        }
+        return generateServerErrorCode(res, 500, error, "La composition n'a pas pu être ajoutée.");
+    } finally {
+        await queryRunner.release();
     }
-    await myDataSource.getRepository(Composition).save(composition)
-    .then((composition_ : Composition | Composition[]) => {
-        const titre = !isArray(composition_) ? composition_.titre : '';
-        const message = `La composition ${titre} a bien été créé.`
-        return success(res,201, composition_,message);
-    })
-    .catch(error => {
-        if(error instanceof ValidationError) {
-            return generateServerErrorCode(res,400,error,'Ce type existe déjà.')
-        }
-        if(error.code == "ER_DUP_ENTRY") {
-            return generateServerErrorCode(res,400,error,'Ce type existe déjà.')
-        }
-        const message = `Le type n'a pas pu être ajouté. Réessayez dans quelques instants.`
-        return generateServerErrorCode(res,500,error,message)
-    })
-}
+};
 
 
 export const getAllComposition = async (req: Request, res: Response) => {
@@ -46,6 +94,8 @@ export const getAllComposition = async (req: Request, res: Response) => {
   .leftJoinAndSelect('filiereNiveauMatiere.filiere', 'filiere')
   .leftJoinAndSelect('filiereNiveauMatiere.niveau', 'niveau')
   .leftJoinAndSelect('filiereNiveauMatiere.matiere', 'matiere')
+   .leftJoinAndSelect('composition.compoQuestions', 'compoQuestions')
+  .leftJoinAndSelect('compoQuestions.question', 'question')
   .where("composition.deletedAt IS NULL");
 
 
@@ -77,22 +127,34 @@ export const getComposition = async (req: Request, res: Response) => {
             id: parseInt(req.params.id),
         },
         relations: {
-            professeur:true,
-    },
+            professeur: true,
+            annee: true,
+            filiereNiveauMatiere: {
+                filiere: true,
+                niveau: true,
+                matiere: true
+            },
+            compoQuestions: {
+                question: {
+                    reponses: true 
+                }
+            }
+        },
     })
     .then(composition => {
-        if(composition === null) {
-          const message = `La composition demandée n'existe pas. Réessayez avec un autre identifiant.`
-          return generateServerErrorCode(res,400,"L'id n'existe pas",message)
+        if (composition === null) {
+            const message = `La composition demandée n'existe pas. Réessayez avec un autre identifiant.`;
+            return generateServerErrorCode(res, 400, "L'id n'existe pas", message);
         }
-        const message = `Le type de méda a bien été trouvé.`
-        return success(res,200, composition,message);
+        const message = `Composition récupérée avec succès.`;
+        return success(res, 200, composition, message);
     })
     .catch(error => {
-        const message = `La composition n'a pas pu être récupérée. Réessayez dans quelques instants.`
-        return generateServerErrorCode(res,500,error,message)
-    })
+        const message = `La composition n'a pas pu être récupérée. Réessayez dans quelques instants.`;
+        return generateServerErrorCode(res, 500, error, message);
+    });
 };
+
 
 
 export const updateComposition = async (req: Request, res: Response) => {
@@ -102,7 +164,13 @@ export const updateComposition = async (req: Request, res: Response) => {
             id: parseInt(req.params.id),
         },
         relations: {
-            professeur:true,
+        professeur:true,
+        annee: true,
+        filiereNiveauMatiere: {
+        filiere: true,
+        niveau: true,
+        matiere: true
+    }
         },
     }
     )
