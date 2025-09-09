@@ -2,6 +2,7 @@
 import { IsNotEmpty } from "class-validator";
 import { Column, CreateDateColumn, DeleteDateColumn, Entity, JoinColumn, ManyToOne, OneToMany, PrimaryGeneratedColumn, Timestamp, UpdateDateColumn } from "typeorm";
 import { Composition } from "./Composition";
+import { Piece } from "./Piece";
 
 
 @Entity()
@@ -39,10 +40,11 @@ export class Professeur {
     @Column({ nullable: true })
     telProfesseur2: string
 
-
     @OneToMany(() => Composition, (composition) => composition.professeur)
     compositions: Composition[];
 
+    @OneToMany(() => Piece, piece => piece.professeur)
+    pieces: Piece[];
 
     @CreateDateColumn()
     createdAt: Timestamp

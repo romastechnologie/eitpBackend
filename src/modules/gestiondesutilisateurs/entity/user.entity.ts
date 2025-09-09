@@ -31,6 +31,12 @@ export class User {
   @Column({ nullable: true })
   nomComplet: string;
 
+  // @Column({ nullable: true })
+  // nom: string;
+
+  // @Column({ nullable: true })
+  // prenom: string;
+
   @Column({ nullable: true, unique: true })
   telephone: string;
 

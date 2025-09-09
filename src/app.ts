@@ -51,6 +51,8 @@ import { classesRoutes } from "./modules/gestionsolidarite/route/classe.route";
 import { categorieOffresRoutes } from "./modules/gestionsolidarite/route/categorieOffre.route";
 import { filiereNiveauMatieresRoutes } from "./modules/gestionelearning/route/filiereniveaumatiere.route";
 import { offresRoutes } from "./modules/gestionsolidarite/route/offre.route";
+import { piecesRoutes } from "./modules/gestionelearning/route/piece.route";
+import { typePiecesRoutes } from "./modules/gestionelearning/route/typepiece.route";
 
 
 require("dotenv").config();
@@ -190,6 +192,8 @@ reponseRoutes(app);
 propositionReponseRoutes(app);
 niveauxRoutes(app);
 filiereNiveauMatieresRoutes(app);
+piecesRoutes(app);
+typePiecesRoutes(app);
 
 //solidarité
 typeEmploiDuTempsRoutes(app);

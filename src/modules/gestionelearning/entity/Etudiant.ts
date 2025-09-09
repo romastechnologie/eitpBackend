@@ -1,8 +1,11 @@
 
 import { IsNotEmpty } from "class-validator";
-import { Column, CreateDateColumn, DeleteDateColumn, Entity, JoinColumn, ManyToOne, OneToMany, PrimaryGeneratedColumn, Timestamp, UpdateDateColumn } from "typeorm";
+import { Column, CreateDateColumn, DeleteDateColumn, Entity, JoinColumn, JoinTable, ManyToMany, ManyToOne, OneToMany, PrimaryGeneratedColumn, Timestamp, UpdateDateColumn } from "typeorm";
 import { Inscription } from "./Inscription";
 import { Note } from "./Note";
+import { Piece } from "./Piece";
+import { Parent } from "./Parent";
+import { ParentEtudiant } from "./ParentEtudiant";
 
 
 @Entity()
@@ -37,8 +40,23 @@ export class Etudiant {
     @OneToMany(() => Inscription, inscription => inscription.etudiant)
     inscriptions: Inscription[];
 
+    @OneToMany(() => Piece, piece => piece.etudiant)
+    pieces: Piece[];
+
     @OneToMany(() => Note, note => note.etudiant)
     notes: Note[];
+
+    // @ManyToMany(() => Parent, (parent) => parent.etudiants)
+    // @JoinTable({
+    //     name: "parent_etudiant",
+    //     joinColumn: { name: "etudiantId", referencedColumnName: "id" },
+    //     inverseJoinColumn: { name: "parentId", referencedColumnName: "id" },
+    // })
+    // parents: Parent[];
+
+
+    @OneToMany(() => ParentEtudiant, (parentetudiant) => parentetudiant.etudiant)
+    parentetudiants: ParentEtudiant[]
 
     @CreateDateColumn()
     createdAt: Timestamp
@@ -48,6 +66,10 @@ export class Etudiant {
 
     @DeleteDateColumn()
     deletedAt: Timestamp;
+
 }
+
+
+
 
 
