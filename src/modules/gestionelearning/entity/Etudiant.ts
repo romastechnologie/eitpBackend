@@ -25,17 +25,26 @@ export class Etudiant {
     @IsNotEmpty({ message: "Le prénom est obligatoire" })
     prenom: string
 
+
+     @Column({ unique: true, nullable: false })
+    @IsNotEmpty({ message: "Le sexe est obligatoire" })
+    sexe: string
+
     @Column({ unique: true, nullable: false })
     @IsNotEmpty({ message: "L' email est obligatoire" })
     email: string
 
-    @Column({ nullable: false })
-    @IsNotEmpty({ message: "Le mot de passe est obligatoire" })
-    password: string
+    // @Column({ nullable: false })
+    // @IsNotEmpty({ message: "Le mot de passe est obligatoire" })
+    // password: string
 
     @Column({ unique: true, nullable: false })
     @IsNotEmpty({ message: "La date de naissance est obligatoire" })
     dateNaissance: Date
+
+    @Column({ unique: true, nullable: false })
+    @IsNotEmpty({ message: "La date de naissance est obligatoire" })
+    ecoleProvenance: string
 
     @OneToMany(() => Inscription, inscription => inscription.etudiant)
     inscriptions: Inscription[];
@@ -45,15 +54,6 @@ export class Etudiant {
 
     @OneToMany(() => Note, note => note.etudiant)
     notes: Note[];
-
-    // @ManyToMany(() => Parent, (parent) => parent.etudiants)
-    // @JoinTable({
-    //     name: "parent_etudiant",
-    //     joinColumn: { name: "etudiantId", referencedColumnName: "id" },
-    //     inverseJoinColumn: { name: "parentId", referencedColumnName: "id" },
-    // })
-    // parents: Parent[];
-
 
     @OneToMany(() => ParentEtudiant, (parentetudiant) => parentetudiant.etudiant)
     parentetudiants: ParentEtudiant[]

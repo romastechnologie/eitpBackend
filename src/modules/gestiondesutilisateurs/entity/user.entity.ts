@@ -28,14 +28,14 @@ export class User {
   @PrimaryGeneratedColumn()
   id: number;
 
+  // @Column({ nullable: true })
+  // nomComplet: string;
+
   @Column({ nullable: true })
-  nomComplet: string;
+  nom: string;
 
-  // @Column({ nullable: true })
-  // nom: string;
-
-  // @Column({ nullable: true })
-  // prenom: string;
+  @Column({ nullable: true })
+  prenom: string;
 
   @Column({ nullable: true, unique: true })
   telephone: string;
