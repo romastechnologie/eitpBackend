@@ -11,7 +11,7 @@ import { checkRelationsOneToMany } from "../../../configs/checkRelationsOneToMan
 //  Créer un utilisateur
 export const createUser = async (req: Request, res: Response) => {
     const userRepository = myDataSource.getRepository(User);
-    const { telephone, communes, nomComplet } = req.body;
+    const { telephone,  nom, prenom } = req.body;
 
     try {
         req.body.telephone = telephone?.replace(/\s/g, '');
@@ -25,15 +25,9 @@ export const createUser = async (req: Request, res: Response) => {
 
         user = await userRepository.save(user);
 
-        if (communes && Array.isArray(communes) && communes.length > 0) {
-            const insertCommunesLvreurQuery = `
-                INSERT INTO zone_couverture (userId, communeId)
-                VALUES ${communes.map((communeId: number) => `(${user.id}, ${communeId})`).join(', ')}
-            `;
-            await myDataSource.query(insertCommunesLvreurQuery);
-        }
+       
 
-        const message = `L'utilisateur ${nomComplet} a bien été créé.`;
+        const message = `L'utilisateur ${nom} a bien été créé.`;
         return success(res, 201, user, message);
 
     } catch (error) {
@@ -101,14 +95,14 @@ export const getUser = async (req: Request, res: Response) => {
 
 //  Mise à jour utilisateur
 export const updateUser = async (req: Request, res: Response) => {
-  const { nomComplet, telephone, email, sexe } = req.body;
+  const { nom, prenom, telephone, email, sexe } = req.body;
   let user = await myDataSource.getRepository(User).findOne({
     where:{ id: parseInt(req.body.userCreation) },
   })
   if (!user) {
       return generateServerErrorCode(res,400,"L'id n'existe pas",'Utilisateur introuvable')
   }
-  user = myDataSource.getRepository(User).merge(user,{ nomComplet, telephone, email, sexe });
+  user = myDataSource.getRepository(User).merge(user,{ nom,prenom, telephone, email, sexe });
   const errors = await validate(user)
   if (errors.length > 0) {
       const message = validateMessage(errors);
@@ -116,7 +110,7 @@ export const updateUser = async (req: Request, res: Response) => {
   }
   await myDataSource.getRepository(User).save(user)
   .then(user => {
-      const message = `L'utilisateur ${req.body.nomComplet} a bien été modifié.`
+      const message = `L'utilisateur ${req.body.nom} a bien été modifié.`
       return success(res,200, user,message);
   })
   .catch(error => {

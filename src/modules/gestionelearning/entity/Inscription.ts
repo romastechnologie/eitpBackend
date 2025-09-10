@@ -15,6 +15,9 @@ export class Inscription {
     @IsNotEmpty({ message: "La date est obligatoire" })
     dateInscription: Date
 
+
+    
+
     @ManyToOne(() => Etudiant, (etudiant) => etudiant.inscriptions)
     etudiant: Etudiant
 
