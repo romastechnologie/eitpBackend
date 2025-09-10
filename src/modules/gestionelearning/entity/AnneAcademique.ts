@@ -5,7 +5,7 @@ import { Composition } from "./Composition";
 
 
 @Entity()
-export class AnneeAcademique {
+export class AnneeAcademique {              
     @PrimaryGeneratedColumn()
     id: number
 

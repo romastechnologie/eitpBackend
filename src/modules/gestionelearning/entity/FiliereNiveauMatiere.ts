@@ -16,8 +16,8 @@ export class FiliereNiveauMatiere {
     @IsNotEmpty({ message: "Le coefficient est obligatoire" })
     coefficient: number
 
-  @Column({ type: "int", default: 1 })
-statut: number;
+    @Column({ type: "int", default: 1 })
+    statut: number;
 
 
     @ManyToOne(() => Filiere, (filiere) => filiere.filiereNiveauMatieres)
