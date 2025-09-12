@@ -293,6 +293,8 @@ export const updateComposition = async (req: Request, res: Response) => {
 };
 
 
+// delete avec permission ici
+
 // export const deleteComposition = async (req: Request, res: Response) => {
 //   try {
 //     const id = Number(req.params.id);
@@ -373,6 +375,9 @@ export const updateComposition = async (req: Request, res: Response) => {
 //         return generateServerErrorCode(res, 500, error, message);
 //     }
 // };
+
+
+// delete sans permission
 
 export const deleteComposition = async (req: Request, res: Response) => {
   try {
