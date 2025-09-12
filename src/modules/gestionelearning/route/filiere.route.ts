@@ -1,11 +1,22 @@
 import * as express from 'express';
-import { createFiliere, deleteFiliere, getAllFiliere, getFiliere, updateFiliere } from '../controller/filiere.controller';
+import { createFiliere, deleteFiliere, getAllFiliere, getAllFilieres, getFiliere, updateFiliere } from '../controller/filiere.controller';
 import { checkPermission } from '../../../middlewares/auth.middleware';
 
 export  const filieresRoutes =  (router: express.Router) => {
-  router.post('/api/filieres',checkPermission('AddFiliere'), createFiliere);
-  router.get('/api/filieres',checkPermission('ListFiliere'), getAllFiliere);
-  router.get('/api/filieres/:id',checkPermission('ViewFiliere'), getFiliere);
-  router.delete('/api/filieres/:id',checkPermission('DeleteFiliere'),deleteFiliere);
-  router.put('/api/filieres/:id',checkPermission('EditFiliere'), updateFiliere);
+  // router.post('/api/filieres',checkPermission('AddFiliere'), createFiliere);
+  // router.get('/api/filieres',checkPermission('ListFiliere'), getAllFiliere);
+  // router.get('/api/all/filieres',checkPermission('ListAllFiliere'), getAllFilieres);
+  // router.get('/api/filieres/:id',checkPermission('ViewFiliere'), getFiliere);
+  // router.delete('/api/filieres/:id',checkPermission('DeleteFiliere'),deleteFiliere);
+  // router.put('/api/filieres/:id',checkPermission('EditFiliere'), updateFiliere);
+
+    router.post('/api/filieres', createFiliere);
+  router.get('/api/filieres', getAllFiliere);
+  router.get('/api/all/filieres', getAllFilieres);
+  router.get('/api/filieres/:id', getFiliere);
+  router.delete('/api/filieres/:id',deleteFiliere);
+  router.put('/api/filieres/:id',updateFiliere);
+
+
+
 };

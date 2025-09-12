@@ -39,6 +39,21 @@ import { filieresRoutes } from "./modules/gestionelearning/route/filiere.route";
 import { forumsRoutes } from "./modules/gestionelearning/route/forum.route";
 import { matieresRoutes } from "./modules/gestionelearning/route/matiere.route";
 import { professeursRoutes } from "./modules/gestionelearning/route/professeur.route";
+import { questionsRoutes } from "./modules/gestionelearning/route/question.route";
+import { reponseRoutes } from "./modules/gestionelearning/route/reponse.route";
+import { propositionReponseRoutes } from "./modules/gestionelearning/route/propositionreponse.route";
+import { niveauxRoutes } from "./modules/gestionelearning/route/niveau.route";
+import { typeEmploiDuTempsRoutes } from "./modules/gestionsolidarite/route/typeEmploiDuTemps";
+import { qualificationsRoutes } from "./modules/gestionsolidarite/route/qualification.route";
+import { languesRoutes } from "./modules/gestionsolidarite/route/langue.route";
+import { activitesRoutes } from "./modules/gestionsolidarite/route/activite.route";
+import { classesRoutes } from "./modules/gestionsolidarite/route/classe.route";
+import { categorieOffresRoutes } from "./modules/gestionsolidarite/route/categorieOffre.route";
+import { filiereNiveauMatieresRoutes } from "./modules/gestionelearning/route/filiereniveaumatiere.route";
+import { offresRoutes } from "./modules/gestionsolidarite/route/offre.route";
+import { piecesRoutes } from "./modules/gestionelearning/route/piece.route";
+import { typePiecesRoutes } from "./modules/gestionelearning/route/typepiece.route";
+
 
 require("dotenv").config();
 
@@ -172,6 +187,22 @@ filieresRoutes(app);
 forumsRoutes(app);
 matieresRoutes(app);
 professeursRoutes(app);
+questionsRoutes(app);
+reponseRoutes(app);
+propositionReponseRoutes(app);
+niveauxRoutes(app);
+filiereNiveauMatieresRoutes(app);
+piecesRoutes(app);
+typePiecesRoutes(app);
+
+//solidarité
+typeEmploiDuTempsRoutes(app);
+qualificationsRoutes(app);
+languesRoutes(app);
+activitesRoutes(app);
+classesRoutes(app);
+categorieOffresRoutes(app);
+offresRoutes(app);
 
 
 //Autorisation des entêtes

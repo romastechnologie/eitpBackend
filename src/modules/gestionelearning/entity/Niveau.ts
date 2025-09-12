@@ -11,6 +11,10 @@ export class Niveau {
     id: number
 
     @Column({ unique: true, nullable: false })
+    @IsNotEmpty({ message: "Le code est obligatoire" })
+    code: string
+
+    @Column({ unique: true, nullable: false })
     @IsNotEmpty({ message: "Le libellé est obligatoire" })
     libelle: string
 

@@ -5,9 +5,13 @@ import { Composition } from "./Composition";
 
 
 @Entity()
-export class AnneeAcademique {
+export class AnneeAcademique {              
     @PrimaryGeneratedColumn()
     id: number
+
+ @Column({ unique: true, nullable: false })
+    @IsNotEmpty({ message: "La date de début est obligatoire" })
+    datePrerentree: Date
 
     @Column({ unique: true, nullable: false })
     @IsNotEmpty({ message: "La date de début est obligatoire" })

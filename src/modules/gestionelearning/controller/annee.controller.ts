@@ -15,22 +15,22 @@ export const createAnneeAcademique = async (req: Request, res: Response) => {
         return generateServerErrorCode(res,400,errors,message)
     }
     await myDataSource.getRepository(AnneeAcademique).save(annee)
-    .then((annee_ : AnneeAcademique | AnneeAcademique[]) => {
-        const libelle = !isArray(annee_) ? annee_.libelle : '';
-        const message = `L'année ${libelle} a bien été créé.`
-        return success(res,201, annee,message);
+    .then(annee => {
+        const message = `L'annee ${req.body.libelle} a bien été créée.`
+        return success(res,201,annee,message);
     })
     .catch(error => {
         if(error instanceof ValidationError) {
-            return generateServerErrorCode(res,400,error,'Cette annéeexiste déjà.')
+            return generateServerErrorCode(res,400,error,'Cette annee existe déjà.')
         }
         if(error.code == "ER_DUP_ENTRY") {
-            return generateServerErrorCode(res,400,error,'Cette annéeexiste déjà.')
+            return generateServerErrorCode(res,400,error,'Cette annee existe déjà.')
         }
-        const message = `Le type n'a pas pu être ajouté. Réessayez dans quelques instants.`
+        const message = `La annee n'a pas pu être ajouté. Réessayez dans quelques instants.`
         return generateServerErrorCode(res,500,error,message)
     })
 }
+
 
 
 export const getAllAnneeAcademique = async (req: Request, res: Response) => {
@@ -55,6 +55,31 @@ export const getAllAnneeAcademique = async (req: Request, res: Response) => {
         return generateServerErrorCode(res,500,error,message)
     })
 };
+
+export const getAllAnneeAcademiques = async (req: Request, res: Response) => {
+  const { searchTerm, searchQueries } = paginationAndRechercheInit(req, AnneeAcademique);
+
+  try {
+    let reque = myDataSource.getRepository(AnneeAcademique)
+      .createQueryBuilder('annee')
+      .where("annee.deletedAt IS NULL");
+
+    if (searchQueries.length > 0) {
+      reque.andWhere(new Brackets(qb => {
+        qb.where(searchQueries.join(' OR '), { keyword: `%${searchTerm}%` });
+      }));
+    }
+
+    const data = await reque.getMany();
+
+    const message = 'La liste des années a bien été récupérée.';
+    return success(res, 200, { data }, message);
+  } catch (error) {
+    const message = `La liste des années n'a pas pu être récupérée. Réessayez dans quelques instants.`;
+    return generateServerErrorCode(res, 500, error, message);
+  }
+};
+
 
 export const getAnneeAcademique = async (req: Request, res: Response) => {
     await myDataSource.getRepository(AnneeAcademique).findOne({

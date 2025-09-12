@@ -4,6 +4,8 @@ import { Professeur } from "./Professeur";
 import { Note } from "./Note";
 import { AnneeAcademique } from "./AnneAcademique";
 import { FiliereNiveauMatiere } from "./FiliereNiveauMatiere";
+import { CompositionQuestion } from "./CompositionQuestion";
+import { Reponse } from "./Reponse";
 
 
 @Entity()
@@ -11,13 +13,17 @@ export class Composition {
     @PrimaryGeneratedColumn()
     id: number
 
-    @Column({ unique: true, nullable: false })
+    @Column({ nullable: false })
     @IsNotEmpty({ message: "La date est obligatoire" })
-    dateCompostion: Date
+    dateComposition: Date
 
-    @Column({ unique: true, nullable: false })
+    @Column({ nullable: false })
     @IsNotEmpty({ message: "Le titre est obligatoire" })
-    titre: Date
+    titre: string
+
+    @Column({ nullable: false })
+    @IsNotEmpty({ message: "Le type de la question est obligatoire" })
+    type: string;
 
     @ManyToOne(() => Professeur, (professeur) => professeur.compositions)
     professeur: Professeur
@@ -28,8 +34,18 @@ export class Composition {
     @ManyToOne(() => AnneeAcademique, (annee) => annee.compositions)
     annee: AnneeAcademique
 
-    @ManyToOne(() => FiliereNiveauMatiere, (filiereNiveauMatiere) => filiereNiveauMatiere.compositions)
+     @ManyToOne(() => FiliereNiveauMatiere, (filiereNiveauMatiere) => filiereNiveauMatiere.compositions)
+    @JoinColumn({ name: 'filiereNiveauMatiereId' }) 
     filiereNiveauMatiere: FiliereNiveauMatiere
+
+    @Column({ nullable: true })
+    filiereNiveauMatiereId: number
+
+    @OneToMany(() => CompositionQuestion, compoQuestion => compoQuestion.composition)
+    compoQuestions: CompositionQuestion[];
+
+    @OneToMany(() => Reponse, reponse => reponse.composition)
+    reponses: Reponse[];
 
     @CreateDateColumn()
     createdAt: Timestamp
@@ -40,3 +56,5 @@ export class Composition {
     @DeleteDateColumn()
     deletedAt: Timestamp;
 }
+
+

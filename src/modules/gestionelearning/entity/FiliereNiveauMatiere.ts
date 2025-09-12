@@ -1,9 +1,10 @@
 import { IsNotEmpty } from "class-validator";
-import { Column, CreateDateColumn, DeleteDateColumn, Entity, JoinColumn, ManyToOne, OneToMany, PrimaryGeneratedColumn, Timestamp, UpdateDateColumn } from "typeorm";
+import { Column, CreateDateColumn, DeleteDateColumn, Entity, JoinColumn, ManyToOne, OneToMany, PrimaryGeneratedColumn, Timestamp, Unique, UpdateDateColumn } from "typeorm";
 import { Matiere } from "./Matiere";
 import { Niveau } from "./Niveau";
 import { Filiere } from "./Filiere";
 import { Composition } from "./Composition";
+import { Question } from "./Question";
 
 
 @Entity()
@@ -13,11 +14,11 @@ export class FiliereNiveauMatiere {
 
     @Column({ nullable: false })
     @IsNotEmpty({ message: "Le coefficient est obligatoire" })
-    coefficient: Date
+    coefficient: number
 
-    @Column({ nullable: false })
-    @IsNotEmpty({ message: "Le statut est obligatoire" })
-    statut: boolean
+    @Column({ type: "int", default: 1 })
+    statut: number;
+
 
     @ManyToOne(() => Filiere, (filiere) => filiere.filiereNiveauMatieres)
     filiere: Filiere
@@ -30,6 +31,9 @@ export class FiliereNiveauMatiere {
 
     @OneToMany(() => Composition, composition => composition.filiereNiveauMatiere)
     compositions: Composition[];
+
+    @ManyToOne(() => Question, (question) => question.filiereNiveauMatieres)
+    question: Question
 
     @CreateDateColumn()
     createdAt: Timestamp

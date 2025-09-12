@@ -56,6 +56,22 @@ export const getAllFiliere = async (req: Request, res: Response) => {
     })
 };
 
+export const getAllFilieres= async (req: Request, res: Response) => {
+    await myDataSource.getRepository(Filiere).find({
+        relations:{
+            
+        }
+    })
+    .then((retour) => {
+        const message = 'La liste des filières a bien été récupérée.';
+        return success(res,200,{data:retour}, message);
+    }).catch(error => {
+        const message = `La liste des filières n'a pas pu être récupérée. Réessayez dans quelques instants.`
+        //res.status(500).json({ message, data: error })
+        return generateServerErrorCode(res,500,error,message)
+    })
+};
+
 export const getFiliere = async (req: Request, res: Response) => {
     await myDataSource.getRepository(Filiere).findOne({
         where: {

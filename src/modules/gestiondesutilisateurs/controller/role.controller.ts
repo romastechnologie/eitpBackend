@@ -196,7 +196,7 @@ import { User } from "../entity/user.entity";
         await myDataSource.getRepository(Role).findOne({
             where: { id: parseInt(req.params.id) },
             select: {id:true, nom:true, description:true, estMarchand:true, createdAt:true,
-                users:{ id:true, nomComplet:true, email:true, sexe:true,telephone:true, createdAt:true },
+                users:{ id:true, nom:true, prenom:true,email:true, sexe:true,telephone:true, createdAt:true },
             },
             relations: { 
                 rolePermissions: { permission: true},
