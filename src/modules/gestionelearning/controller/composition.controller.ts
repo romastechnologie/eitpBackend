@@ -293,35 +293,37 @@ export const updateComposition = async (req: Request, res: Response) => {
 };
 
 
-export const deleteComposition = async (req: Request, res: Response) => {
-    const resultat = await checkRelationsOneToMany('Composition', parseInt(req.params.id));
-    await myDataSource.getRepository(Composition)
-    .findOne({
-        where: {
-            id: parseInt(req.params.id)
-        }
-        })
-    .then(composition => {        
-        if(composition === null) {
-          const message = `La composition demandé n'existe pas. Réessayez avec un autre identifiant.`
-          return generateServerErrorCode(res,400,"L'id n'existe pas",message);
-        }
+// export const deleteComposition = async (req: Request, res: Response) => {
+//   try {
+//     const id = Number(req.params.id);
+//     if (isNaN(id)) {
+//       return generateServerErrorCode(res, 400, "Identifiant invalide", "L'id doit être un nombre.");
+//     }
 
-        if(resultat){
-            const message = `Cette composition est lié à d'autres enregistrements. Vous ne pouvez pas le supprimer.`
-            return generateServerErrorCode(res,400,"Cette composition est lié à d'autres enregistrements. Vous ne pouvez pas le supprimer.",message);
-        }else{
-            myDataSource.getRepository(Composition).softRemove(composition)
-            .then(_ => {
-                const message = `La composition avec l'identifiant n°${composition.id} a bien été supprimé.`;
-                return success(res,200, composition,message);
-            })
-        }
-    }).catch(error => {
-        const message = `La composition n'a pas pu être supprimé. Réessayez dans quelques instants.`
-        return generateServerErrorCode(res,500,error,message)
-    })
-};
+//     const resultat = await checkRelationsOneToMany('Composition', id);
+//     const composition = await myDataSource.getRepository(Composition).findOne({ where: { id } });
+
+//     if (!composition) {
+//       return generateServerErrorCode(res, 400, "L'id n'existe pas", `La composition demandée n'existe pas. Réessayez avec un autre identifiant.`);
+//     }
+
+//     if (resultat) {
+//       return generateServerErrorCode(
+//         res,
+//         400,
+//         "Cette composition est liée à d'autres enregistrements.",
+//         "Vous ne pouvez pas la supprimer."
+//       );
+//     }
+
+//     await myDataSource.getRepository(Composition).softRemove(composition);
+
+//     return success(res, 200, composition, `La composition avec l'identifiant n°${composition.id} a bien été supprimée.`);
+//   } catch (error) {
+//     return generateServerErrorCode(res, 500, error, "La composition n'a pas pu être supprimée. Réessayez dans quelques instants.");
+//   }
+// };
+
 
 // export const getAllFiliereNiveauMatieres = async (req: Request, res: Response) => {
 //     const { filiere, niveau } = req.query;
@@ -371,3 +373,47 @@ export const deleteComposition = async (req: Request, res: Response) => {
 //         return generateServerErrorCode(res, 500, error, message);
 //     }
 // };
+
+export const deleteComposition = async (req: Request, res: Response) => {
+  try {
+    const id = Number(req.params.id);
+
+    if (isNaN(id)) {
+      return generateServerErrorCode(
+        res,
+        400,
+        "Identifiant invalide",
+        "L'id doit être un nombre."
+      );
+    }
+
+    const composition = await myDataSource.getRepository(Composition).findOne({
+      where: { id }
+    });
+
+    if (!composition) {
+      return generateServerErrorCode(
+        res,
+        400,
+        "L'id n'existe pas",
+        `La composition demandée n'existe pas. Réessayez avec un autre identifiant.`
+      );
+    }
+
+    await myDataSource.getRepository(Composition).softRemove(composition);
+
+    return success(
+      res,
+      200,
+      composition,
+      `La composition avec l'identifiant n°${composition.id} a bien été supprimée.`
+    );
+  } catch (error) {
+    return generateServerErrorCode(
+      res,
+      500,
+      error,
+      "La composition n'a pas pu être supprimée. Réessayez dans quelques instants."
+    );
+  }
+};
