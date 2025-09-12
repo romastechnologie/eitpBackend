@@ -10,5 +10,4 @@ export const questionsRoutes = (router: express.Router) => {
   router.put('/api/questions/:id', checkPermission('EditQuestion'), updateQuestion);
   router.get('/api/questions/:id/propositions', checkPermission('ViewPropositionsByQuestion'), getQuestionPropositions);
   
-
 };

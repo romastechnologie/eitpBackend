@@ -158,118 +158,172 @@ export const getComposition = async (req: Request, res: Response) => {
 
 
 export const updateComposition = async (req: Request, res: Response) => {
-    try {
-        const compositionRepo = myDataSource.getRepository(Composition);
-        const compoQuestionRepo = myDataSource.getRepository(CompositionQuestion);
+  try {
+    const compositionRepo = myDataSource.getRepository(Composition);
+    const compoQuestionRepo = myDataSource.getRepository(CompositionQuestion);
+    const questionRepo = myDataSource.getRepository(Question);
 
-        // 🔹 Récupération de la composition avec toutes les relations nécessaires
-        const composition = await compositionRepo.findOne({
-            where: { id: parseInt(req.params.id) },
-            relations: {
-                professeur: true,
-                annee: true,
-                filiereNiveauMatiere: { filiere: true, niveau: true, matiere: true },
-                compoQuestions: { question: true }
-            }
-        });
+    // Récupération de la composition avec ses relations
+    const composition = await compositionRepo.findOne({
+      where: { id: parseInt(req.params.id) },
+      relations: {
+        professeur: true,
+        annee: true,
+        filiereNiveauMatiere: { filiere: true, niveau: true, matiere: true },
+        compoQuestions: { question: true }
+      }
+    });
 
-        if (!composition) {
-            return generateServerErrorCode(res, 400, "L'id n'existe pas", 'Cette composition existe déjà');
-        }
-
-        // 🔹 Mise à jour des champs de la composition
-        compositionRepo.merge(composition, req.body);
-
-        // 🔹 Gestion des questions
-        const newQuestions = req.body.questionsAdded || [];
-
-        // Supprimer les questions non incluses dans newQuestions
-        if (composition.compoQuestions) {
-            composition.compoQuestions = composition.compoQuestions.filter(cq =>
-                newQuestions.some((q: any) => q.id === cq.question.id)
-            );
-        } else {
-            composition.compoQuestions = [];
-        }
-
-        // Ajouter les nouvelles questions
-        for (const q of newQuestions) {
-            if (!composition.compoQuestions.find(cq => cq.question.id === q.id)) {
-                composition.compoQuestions.push(
-                    compoQuestionRepo.create({
-                        composition,
-                        question: { id: q.id } as any
-                    })
-                );
-            }
-        }
-
-        // 🔹 Validation
-        const errors = await validate(composition);
-        if (errors.length > 0) {
-            const message = validateMessage(errors);
-            return generateServerErrorCode(res, 400, errors, message);
-        }
-
-        // 🔹 Sauvegarde
-        const savedComposition = await compositionRepo.save(composition);
-
-        // 🔹 Recharger la composition avec toutes les relations pour l'affichage
-        const compositionWithQuestions = await compositionRepo.findOne({
-            where: { id: savedComposition.id },
-            relations: {
-                professeur: true,
-                annee: true,
-                filiereNiveauMatiere: { filiere: true, niveau: true, matiere: true },
-                compoQuestions: { question: true }
-            }
-        });
-
-        const message = `La composition ${savedComposition.id} a bien été modifiée.`;
-        return success(res, 200, compositionWithQuestions, message);
-
-    } catch (error: any) {
-        if (error instanceof ValidationError) {
-            return generateServerErrorCode(res, 400, error, 'Cette composition existe déjà');
-        }
-        if (error.code === "ER_DUP_ENTRY") {
-            return generateServerErrorCode(res, 400, error, 'Cette composition existe déjà');
-        }
-        const message = `La composition n'a pas pu être modifiée. Réessayez dans quelques instants.`;
-        return generateServerErrorCode(res, 500, error, message);
+    if (!composition) {
+      return generateServerErrorCode(res, 400, "L'id n'existe pas", 'Cette composition n\'existe pas');
     }
+
+    // Séparer les champs simples et les questions
+    const { compoQuestions, questionsToCreate, questionsToUpdate, questionsToDelete, ...rest } = req.body;
+
+    // Mise à jour des champs simples
+    compositionRepo.merge(composition, rest);
+
+    // Gérer les nouvelles questions (questionsToCreate)
+    const createdQuestionIds: number[] = [];
+    if (Array.isArray(questionsToCreate)) {
+      for (const questionData of questionsToCreate) {
+        const newQuestion = questionRepo.create({
+          contenu: questionData.contenu,
+          type: questionData.type,
+          reponse: questionData.reponse || null,
+        });
+        const savedQuestion = await questionRepo.save(newQuestion);
+        createdQuestionIds.push(savedQuestion.id);
+      }
+    }
+
+    // Gérer les questions existantes à mettre à jour (questionsToUpdate)
+    if (Array.isArray(questionsToUpdate)) {
+      for (const questionData of questionsToUpdate) {
+        await questionRepo.update(
+          { id: questionData.id },
+          {
+            contenu: questionData.contenu,
+            reponse: questionData.reponse || null,
+          }
+        );
+      }
+    }
+
+    // Gérer les questions à supprimer (questionsToDelete)
+    if (Array.isArray(questionsToDelete)) {
+      for (const questionId of questionsToDelete) {
+        await compoQuestionRepo.delete({ question: { id: questionId }, composition: { id: composition.id } });
+        await questionRepo.delete({ id: questionId });
+      }
+    }
+
+    // Gérer les associations de questions (compoQuestions)
+    if (Array.isArray(compoQuestions)) {
+      // Supprimer les associations qui ne sont plus présentes
+      composition.compoQuestions = composition.compoQuestions?.filter((cq) =>
+        compoQuestions.some((q: any) => q.question.id === cq.question.id)
+      ) || [];
+
+      // Ajouter les nouvelles associations
+      for (const q of compoQuestions) {
+        if (!composition.compoQuestions.find((cq) => cq.question.id === q.question.id)) {
+          const newCQ = compoQuestionRepo.create({
+            composition,
+            question: { id: q.question.id },
+          });
+          composition.compoQuestions.push(newCQ);
+        }
+      }
+    }
+
+    // Ajouter les questions créées aux associations
+    if (createdQuestionIds.length > 0) {
+      if (!composition.compoQuestions) {
+        composition.compoQuestions = [];
+      }
+      composition.compoQuestions.push(...createdQuestionIds.map(id => compoQuestionRepo.create({
+        composition,
+        question: { id }
+      })));
+    }
+
+    // Validation
+    const errors = await validate(composition);
+    if (errors.length > 0) {
+      const message = validateMessage(errors);
+      return generateServerErrorCode(res, 400, errors, message);
+    }
+
+    // Sauvegarde
+    const savedComposition = await compositionRepo.save(composition);
+
+    // Recharger la composition avec toutes les relations pour l'affichage
+    const compositionWithQuestions = await compositionRepo.findOne({
+      where: { id: savedComposition.id },
+      relations: {
+        professeur: true,
+        annee: true,
+        filiereNiveauMatiere: { filiere: true, niveau: true, matiere: true },
+        compoQuestions: { question: true }
+      }
+    });
+
+    return success(
+      res,
+      200,
+      compositionWithQuestions,
+      `La composition ${savedComposition.id} a bien été modifiée.`
+    );
+  } catch (error: any) {
+    if (error instanceof ValidationError) {
+      return generateServerErrorCode(res, 400, error, 'Erreur de validation');
+    }
+    if (error.code === "ER_DUP_ENTRY") {
+      return generateServerErrorCode(res, 400, error, 'Cette composition existe déjà');
+    }
+    return generateServerErrorCode(
+      res,
+      500,
+      error,
+      `La composition n'a pas pu être modifiée. Réessayez dans quelques instants.`
+    );
+  }
 };
 
 
-export const deleteComposition = async (req: Request, res: Response) => {
-    const resultat = await checkRelationsOneToMany('Composition', parseInt(req.params.id));
-    await myDataSource.getRepository(Composition)
-    .findOne({
-        where: {
-            id: parseInt(req.params.id)
-        }
-        })
-    .then(composition => {        
-        if(composition === null) {
-          const message = `La composition demandé n'existe pas. Réessayez avec un autre identifiant.`
-          return generateServerErrorCode(res,400,"L'id n'existe pas",message);
-        }
+// export const deleteComposition = async (req: Request, res: Response) => {
+//   try {
+//     const id = Number(req.params.id);
+//     if (isNaN(id)) {
+//       return generateServerErrorCode(res, 400, "Identifiant invalide", "L'id doit être un nombre.");
+//     }
 
-        if(resultat){
-            const message = `Cette composition est lié à d'autres enregistrements. Vous ne pouvez pas le supprimer.`
-            return generateServerErrorCode(res,400,"Cette composition est lié à d'autres enregistrements. Vous ne pouvez pas le supprimer.",message);
-        }else{
-            myDataSource.getRepository(Composition).softRemove(composition)
-            .then(_ => {
-                const message = `La composition avec l'identifiant n°${composition.id} a bien été supprimé.`;
-                return success(res,200, composition,message);
-            })
-        }
-    }).catch(error => {
-        const message = `La composition n'a pas pu être supprimé. Réessayez dans quelques instants.`
-        return generateServerErrorCode(res,500,error,message)
-    })
-};
+//     const resultat = await checkRelationsOneToMany('Composition', id);
+//     const composition = await myDataSource.getRepository(Composition).findOne({ where: { id } });
+
+//     if (!composition) {
+//       return generateServerErrorCode(res, 400, "L'id n'existe pas", `La composition demandée n'existe pas. Réessayez avec un autre identifiant.`);
+//     }
+
+//     if (resultat) {
+//       return generateServerErrorCode(
+//         res,
+//         400,
+//         "Cette composition est liée à d'autres enregistrements.",
+//         "Vous ne pouvez pas la supprimer."
+//       );
+//     }
+
+//     await myDataSource.getRepository(Composition).softRemove(composition);
+
+//     return success(res, 200, composition, `La composition avec l'identifiant n°${composition.id} a bien été supprimée.`);
+//   } catch (error) {
+//     return generateServerErrorCode(res, 500, error, "La composition n'a pas pu être supprimée. Réessayez dans quelques instants.");
+//   }
+// };
+
 
 // export const getAllFiliereNiveauMatieres = async (req: Request, res: Response) => {
 //     const { filiere, niveau } = req.query;
@@ -319,3 +373,47 @@ export const deleteComposition = async (req: Request, res: Response) => {
 //         return generateServerErrorCode(res, 500, error, message);
 //     }
 // };
+
+export const deleteComposition = async (req: Request, res: Response) => {
+  try {
+    const id = Number(req.params.id);
+
+    if (isNaN(id)) {
+      return generateServerErrorCode(
+        res,
+        400,
+        "Identifiant invalide",
+        "L'id doit être un nombre."
+      );
+    }
+
+    const composition = await myDataSource.getRepository(Composition).findOne({
+      where: { id }
+    });
+
+    if (!composition) {
+      return generateServerErrorCode(
+        res,
+        400,
+        "L'id n'existe pas",
+        `La composition demandée n'existe pas. Réessayez avec un autre identifiant.`
+      );
+    }
+
+    await myDataSource.getRepository(Composition).softRemove(composition);
+
+    return success(
+      res,
+      200,
+      composition,
+      `La composition avec l'identifiant n°${composition.id} a bien été supprimée.`
+    );
+  } catch (error) {
+    return generateServerErrorCode(
+      res,
+      500,
+      error,
+      "La composition n'a pas pu être supprimée. Réessayez dans quelques instants."
+    );
+  }
+};
