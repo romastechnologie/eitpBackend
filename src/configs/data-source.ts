@@ -13,4 +13,5 @@ export const myDataSource = new DataSource({
     migrationsTableName: "migrations",
     logging: true,  
     synchronize: true,
+    driver: require("mysql2"),
 }) 
