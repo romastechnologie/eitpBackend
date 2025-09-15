@@ -1,5 +1,5 @@
 import * as express from 'express';
-import { createParent, deleteParent, getAllParent, getParent, updateParent } from '../controller/parent.controller';
+import { createParent, deleteParent, getAllParent, getAllParents, getParent, updateParent } from '../controller/parent.controller';
 import { checkPermission } from '../../../middlewares/auth.middleware';
 
 export  const parentsRoutes =  (router: express.Router) => {
@@ -12,6 +12,7 @@ export  const parentsRoutes =  (router: express.Router) => {
 
   router.post('/api/parents', createParent);
   router.get('/api/parents',getAllParent);
+  router.get('/api/all/parents',getAllParents);
   router.get('/api/parents/:id',getParent);
   router.delete('/api/parents/:id',deleteParent);
   router.put('/api/parents/:id', updateParent);
