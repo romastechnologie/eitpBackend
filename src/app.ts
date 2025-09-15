@@ -53,6 +53,7 @@ import { filiereNiveauMatieresRoutes } from "./modules/gestionelearning/route/fi
 import { offresRoutes } from "./modules/gestionsolidarite/route/offre.route";
 import { piecesRoutes } from "./modules/gestionelearning/route/piece.route";
 import { typePiecesRoutes } from "./modules/gestionelearning/route/typepiece.route";
+import { parentsRoutes } from "./modules/gestionelearning/route/parent.route";
 
 
 require("dotenv").config();
@@ -194,6 +195,7 @@ niveauxRoutes(app);
 filiereNiveauMatieresRoutes(app);
 piecesRoutes(app);
 typePiecesRoutes(app);
+parentsRoutes(app);
 
 //solidarité
 typeEmploiDuTempsRoutes(app);

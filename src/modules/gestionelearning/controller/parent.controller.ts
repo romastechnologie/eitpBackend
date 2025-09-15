@@ -17,7 +17,7 @@ export const createParent = async (req: Request, res: Response) => {
     await myDataSource.getRepository(Parent).save(parent)
     .then((parent_ : Parent | Parent[]) => {
         const prenom = !isArray(parent_) ? parent_.prenom : '';
-        const message = `L'étudiant ${prenom} a bien été créé.`
+        const message = `Le parent ${prenom} a bien été créé.`
         return success(res,201, parent,message);
     })
     .catch(error => {
@@ -56,7 +56,7 @@ export const getAllParent = async (req: Request, res: Response) => {
     })
 };
 
-export const getAllParents= async (req: Request, res: Response) => {
+/*export const getAllParents= async (req: Request, res: Response) => {
     await myDataSource.getRepository(Parent).find({
         
     })
@@ -68,7 +68,7 @@ export const getAllParents= async (req: Request, res: Response) => {
         //res.status(500).json({ message, data: error })
         return generateServerErrorCode(res,500,error,message)
     })
-};
+};*/
 
 export const getParent = async (req: Request, res: Response) => {
     await myDataSource.getRepository(Parent).findOne({
@@ -81,18 +81,41 @@ export const getParent = async (req: Request, res: Response) => {
     })
     .then(parent => {
         if(parent === null) {
-          const message = `L'étudiant demandé n'existe pas. Réessayez avec un autre identifiant.`
+          const message = `Le parent demandé n'existe pas. Réessayez avec un autre identifiant.`
           return generateServerErrorCode(res,400,"L'id n'existe pas",message)
         }
-        const message = `Le parent de méda a bien été trouvé.`
+        const message = `Le parent a bien été trouvé.`
         return success(res,200, parent,message);
     })
     .catch(error => {
-        const message = `L'étudiant n'a pas pu être récupéré. Réessayez dans quelques instants.`
+        const message = `Le parent n'a pas pu être récupéré. Réessayez dans quelques instants.`
         return generateServerErrorCode(res,500,error,message)
     })
 };
 
+export const getAllParents = async (req: Request, res: Response) => {
+  const { searchTerm, searchQueries } = paginationAndRechercheInit(req, Parent);
+
+  try {
+    let reque = myDataSource.getRepository(Parent)
+      .createQueryBuilder('parent')
+      .where("parent.deletedAt IS NULL");
+
+    if (searchQueries.length > 0) {
+      reque.andWhere(new Brackets(qb => {
+        qb.where(searchQueries.join(' OR '), { keyword: `%${searchTerm}%` });
+      }));
+    }
+
+    const data = await reque.getMany();
+
+    const message = 'La liste des parents a bien été récupérée.';
+    return success(res, 200, { data }, message);
+  } catch (error) {
+    const message = `La liste des parents n'a pas pu être récupérée. Réessayez dans quelques instants.`;
+    return generateServerErrorCode(res, 500, error, message);
+  }
+};
 
 export const updateParent = async (req: Request, res: Response) => {
     const parent = await myDataSource.getRepository(Parent).findOne(
@@ -115,7 +138,7 @@ export const updateParent = async (req: Request, res: Response) => {
         return generateServerErrorCode(res,400,errors,message)
     }
     await myDataSource.getRepository(Parent).save(parent).then(parent => {
-        const message = `L'étudiant ${parent.id} a bien été modifié.`
+        const message = `Le parent ${parent.id} a bien été modifié.`
         return success(res,200, parent,message);
     }).catch(error => {
         if(error instanceof ValidationError) {
@@ -124,7 +147,7 @@ export const updateParent = async (req: Request, res: Response) => {
         if(error.code == "ER_DUP_ENTRY") {
             return generateServerErrorCode(res,400,error,'Ce parent de média existe déjà')
         }
-        const message = `L'étudiant n'a pas pu être ajouté. Réessayez dans quelques instants.`
+        const message = `Le parent n'a pas pu être ajouté. Réessayez dans quelques instants.`
         return generateServerErrorCode(res,500,error,message)
         // res.status(500).json({ message, data: error }) 
     })
@@ -140,7 +163,7 @@ export const deleteParent = async (req: Request, res: Response) => {
         })
     .then(parent => {        
         if(parent === null) {
-          const message = `L'étudiant demandé n'existe pas. Réessayez avec un autre identifiant.`
+          const message = `Le parent demandé n'existe pas. Réessayez avec un autre identifiant.`
           return generateServerErrorCode(res,400,"L'id n'existe pas",message);
         }
 
@@ -150,12 +173,12 @@ export const deleteParent = async (req: Request, res: Response) => {
         }else{
             myDataSource.getRepository(Parent).softRemove(parent)
             .then(_ => {
-                const message = `L'étudiant avec l'identifiant n°${parent.id} a bien été supprimé.`;
+                const message = `Le parent avec l'identifiant n°${parent.id} a bien été supprimé.`;
                 return success(res,200, parent,message);
             })
         }
     }).catch(error => {
-        const message = `L'étudiant n'a pas pu être supprimé. Réessayez dans quelques instants.`
+        const message = `Le parent n'a pas pu être supprimé. Réessayez dans quelques instants.`
         return generateServerErrorCode(res,500,error,message)
     })
 }
