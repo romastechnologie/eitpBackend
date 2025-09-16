@@ -13,13 +13,14 @@ import { CompositionQuestion } from "../entity/CompositionQuestion";
 import { Reponse } from "../entity/Reponse";
 
 export const createComposition = async (req: Request, res: Response) => {
-    const { titre, dateComposition, professeur, annee, type, filiereNiveauMatiere, compoQuestions } = req.body;
+    const { titre, dateComposition, professeur, annee, type, filiereNiveauMatiere, compoQuestions, questionsToCreate } = req.body;
 
     const queryRunner = myDataSource.createQueryRunner();
     await queryRunner.connect();
     await queryRunner.startTransaction();
 
     try {
+
         let composition = queryRunner.manager.create(Composition, {
             titre,
             dateComposition,
@@ -37,32 +38,66 @@ export const createComposition = async (req: Request, res: Response) => {
 
         composition = await queryRunner.manager.save(composition);
 
-        // Parcourir les questions et leurs réponses
-        for (const cq of compoQuestions) {
-            if (!cq.question?.id) continue;
+        if (questionsToCreate && questionsToCreate.length > 0) {
+            for (const questionData of questionsToCreate) {
 
-            const question = await queryRunner.manager.findOne(Question, { where: { id: cq.question.id } });
-            if (!question) continue;
+                const newQuestion = queryRunner.manager.create(Question, {
+                    contenu: questionData.contenu,
+                    type: questionData.type || type,
 
-            const compositionQuestion = queryRunner.manager.create(CompositionQuestion, {
-                composition,
-                question,
-                estActif: true
-            });
+                });
 
-            await queryRunner.manager.save(compositionQuestion);
+                const savedQuestion = await queryRunner.manager.save(newQuestion);
 
-            // Ici on enregistre les réponses liées à cette question
-            if (cq.reponses && cq.reponses.length > 0) {
-                for (const rep of cq.reponses) {
+                const compositionQuestion = queryRunner.manager.create(CompositionQuestion, {
+                    composition,
+                    question: savedQuestion,
+                    estActif: true
+                });
+
+                await queryRunner.manager.save(compositionQuestion);
+
+                if (questionData.reponse && questionData.reponse.trim()) {
                     const reponse = queryRunner.manager.create(Reponse, {
-                        contenu: rep.contenu,
-                        question: question,
+                        contenu: questionData.reponse,
+                        question: savedQuestion,
                         composition: composition,
-                        user: rep.userId ? { id: rep.userId } : undefined  // optionnel
                     });
 
                     await queryRunner.manager.save(reponse);
+                }
+            }
+        }
+
+        if (compoQuestions && compoQuestions.length > 0) {
+            for (const cq of compoQuestions) {
+                if (!cq.question?.id) continue;
+
+                const question = await queryRunner.manager.findOne(Question, { where: { id: cq.question.id } });
+                if (!question) {
+                    console.warn(`Question avec l'ID ${cq.question.id} non trouvée`);
+                    continue;
+                }
+
+                const compositionQuestion = queryRunner.manager.create(CompositionQuestion, {
+                    composition,
+                    question,
+                    estActif: true
+                });
+
+                await queryRunner.manager.save(compositionQuestion);
+
+                if (cq.reponses && cq.reponses.length > 0) {
+                    for (const rep of cq.reponses) {
+                        const reponse = queryRunner.manager.create(Reponse, {
+                            contenu: rep.contenu,
+                            question: question,
+                            composition: composition,
+                            user: rep.userId ? { id: rep.userId } : undefined
+                        });
+
+                        await queryRunner.manager.save(reponse);
+                    }
                 }
             }
         }
@@ -72,9 +107,15 @@ export const createComposition = async (req: Request, res: Response) => {
 
     } catch (error: any) {
         await queryRunner.rollbackTransaction();
+        console.error('Erreur détaillée lors de la création de la composition:', error);
+        
         if (error.code === "ER_DUP_ENTRY") {
             return generateServerErrorCode(res, 400, error, "Cette entrée existe déjà.");
         }
+
+        console.error('Stack trace:', error.stack);
+        console.error('Données reçues:', { titre, dateComposition, professeur, annee, type, filiereNiveauMatiere, compoQuestions, questionsToCreate });
+        
         return generateServerErrorCode(res, 500, error, "La composition n'a pas pu être ajoutée.");
     } finally {
         await queryRunner.release();
