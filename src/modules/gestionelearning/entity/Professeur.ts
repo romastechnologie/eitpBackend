@@ -3,6 +3,7 @@ import { IsNotEmpty } from "class-validator";
 import { Column, CreateDateColumn, DeleteDateColumn, Entity, JoinColumn, ManyToOne, OneToMany, PrimaryGeneratedColumn, Timestamp, UpdateDateColumn } from "typeorm";
 import { Composition } from "./Composition";
 import { Piece } from "./Piece";
+import { Cours } from "../../gestionsolidarite/entity/Cours";
 
 
 @Entity()
@@ -45,6 +46,9 @@ export class Professeur {
 
     @OneToMany(() => Piece, piece => piece.professeur)
     pieces: Piece[];
+
+    @OneToMany(() => Cours, cours => cours.professeur)
+    cours: Cours[];
 
     @CreateDateColumn()
     createdAt: Timestamp

@@ -54,6 +54,7 @@ import { offresRoutes } from "./modules/gestionsolidarite/route/offre.route";
 import { piecesRoutes } from "./modules/gestionelearning/route/piece.route";
 import { typePiecesRoutes } from "./modules/gestionelearning/route/typepiece.route";
 import { parentsRoutes } from "./modules/gestionelearning/route/parent.route";
+import { emploisDuTempsRoutes } from "./modules/gestionsolidarite/route/emploidutemps.route";
 
 
 require("dotenv").config();
@@ -199,6 +200,7 @@ parentsRoutes(app);
 
 //solidarité
 typeEmploiDuTempsRoutes(app);
+emploisDuTempsRoutes(app);
 qualificationsRoutes(app);
 languesRoutes(app);
 activitesRoutes(app);
