@@ -25,7 +25,7 @@ export const createQuestion = async (req: Request, res: Response) => {
             const question = transactionalEntityManager.getRepository(Question).create({
                 contenu,
                 type,
-                reponse: type === 'QuestionsReponses' && reponse ? reponse : undefined, // Gérer le champ reponse
+                reponse: reponse ?? null,
                 // userCreation: req.user, // Assurez-vous que req.user est défini
             });
 

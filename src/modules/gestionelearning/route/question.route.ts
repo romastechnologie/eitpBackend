@@ -7,7 +7,8 @@ export const questionsRoutes = (router: express.Router) => {
   router.get('/api/questions', checkPermission('ListQuestion'), getAllQuestions);
   router.get('/api/questions/:id', checkPermission('ViewQuestion'), getQuestion);
   router.delete('/api/questions/:id', checkPermission('DeleteQuestion'), deleteQuestion);
-  router.put('/api/questions/:id', checkPermission('EditQuestion'), updateQuestion);
+  // router.put('/api/questions/:id', checkPermission('EditQuestion'), updateQuestion);
+  router.put('/api/questions/:id', updateQuestion);
   router.get('/api/questions/:id/propositions', checkPermission('ViewPropositionsByQuestion'), getQuestionPropositions);
   
 };
