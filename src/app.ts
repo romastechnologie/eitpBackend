@@ -43,7 +43,7 @@ import { questionsRoutes } from "./modules/gestionelearning/route/question.route
 import { reponseRoutes } from "./modules/gestionelearning/route/reponse.route";
 import { propositionReponseRoutes } from "./modules/gestionelearning/route/propositionreponse.route";
 import { niveauxRoutes } from "./modules/gestionelearning/route/niveau.route";
-import { typeEmploiDuTempsRoutes } from "./modules/gestionsolidarite/route/typeEmploiDuTemps";
+import { typeEmploiDuTempsRoutes } from "./modules/gestionsolidarite/route/typeEmploiDuTemps.route";
 import { qualificationsRoutes } from "./modules/gestionsolidarite/route/qualification.route";
 import { languesRoutes } from "./modules/gestionsolidarite/route/langue.route";
 import { activitesRoutes } from "./modules/gestionsolidarite/route/activite.route";
@@ -54,6 +54,7 @@ import { offresRoutes } from "./modules/gestionsolidarite/route/offre.route";
 import { piecesRoutes } from "./modules/gestionelearning/route/piece.route";
 import { typePiecesRoutes } from "./modules/gestionelearning/route/typepiece.route";
 import { parentsRoutes } from "./modules/gestionelearning/route/parent.route";
+import { inscriptionsRoutes } from "./modules/gestionelearning/route/inscription.route";
 import { emploisDuTempsRoutes } from "./modules/gestionsolidarite/route/emploidutemps.route";
 
 
@@ -208,6 +209,7 @@ activitesRoutes(app);
 classesRoutes(app);
 categorieOffresRoutes(app);
 offresRoutes(app);
+inscriptionsRoutes(app);
 
 
 //Autorisation des entêtes

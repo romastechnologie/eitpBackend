@@ -34,16 +34,13 @@ export class Etudiant {
     @IsNotEmpty({ message: "L' email est obligatoire" })
     email: string
 
-    // @Column({ nullable: false })
-    // @IsNotEmpty({ message: "Le mot de passe est obligatoire" })
-    // password: string
 
     @Column({ unique: true, nullable: false })
     @IsNotEmpty({ message: "La date de naissance est obligatoire" })
     dateNaissance: Date
 
     @Column({ unique: true, nullable: false })
-    @IsNotEmpty({ message: "La date de naissance est obligatoire" })
+    @IsNotEmpty({ message: "L'école est obligatoire" })
     ecoleProvenance: string
 
     @OneToMany(() => Inscription, inscription => inscription.etudiant)

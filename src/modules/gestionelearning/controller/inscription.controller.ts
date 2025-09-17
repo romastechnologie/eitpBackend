@@ -10,26 +10,93 @@ import { User } from "../../gestiondesutilisateurs/entity/user.entity";
 import { Parent } from "../entity/Parent";
 import { Etudiant } from "../entity/Etudiant";
 import { ParentEtudiant } from "../entity/ParentEtudiant";
+import { Filiere } from "../entity/Filiere";
+import { Niveau } from "../entity/Niveau";
+import { AnneeAcademique } from "../entity/AnneAcademique";
+import { Piece } from "../entity/Piece";
 
 
 
-/*export const createInscription = async (req: Request, res: Response) => {
+
+
+export const createInscription = async (req: Request, res: Response) => {
   console.log("Corps reçu :", req.body);
 
-  const inscriptionData = {
-    nom: req.body.nom,
-    description: req.body.description,
-    link: req.body.link,
-  };
-
-  if (!Array.isArray(req.body.users) || req.body.users.length === 0) {
-    return generateServerErrorCode(res, 400, null, "Le inscription doit avoir au moins un utilisateur associé.");
-  }
+  // Extraction des données du corps de la requête
+  const {
+    nom,
+    prenom,
+    sexe,
+    email,
+    dateNaissance,
+    ecoleProvenance,
+    numeroEducMaster,
+    niveau,
+    filiere,
+    parent,
+    pieces,
+  } = req.body;
 
   try {
     const result = await myDataSource.manager.transaction(async (manager) => {
-      // Création du inscription
-      const inscription = manager.create(Inscription, inscriptionData);
+      // Étape 1 : Créer ou récupérer l'étudiant
+      let etudiant = await manager.findOne(Etudiant, {
+        where: { email }, // Vérifier si l'étudiant existe déjà via l'email
+      });
+
+      if (!etudiant) {
+        // Créer un nouvel étudiant si aucun n'existe
+        etudiant = manager.create(Etudiant, {
+          matricule: numeroEducMaster || `MAT-${Date.now()}`, // Générer un matricule si non fourni
+          nom,
+          prenom,
+          sexe,
+          email,
+          dateNaissance: new Date(dateNaissance),
+          ecoleProvenance,
+        });
+
+        const etudiantErrors = await validate(etudiant);
+        if (etudiantErrors.length > 0) {
+          throw new Error(validateMessage(etudiantErrors));
+        }
+
+        etudiant = await manager.save(Etudiant, etudiant);
+        console.log("Étudiant enregistré :", etudiant);
+      }
+
+      // Étape 2 : Vérifier l'année académique
+      const anneeAcademique = await manager.findOne(AnneeAcademique, {
+        where: { id: req.body.anneeId }, // Supposons que l'ID de l'année est envoyé
+      });
+      if (!anneeAcademique) {
+        throw new Error("Année académique introuvable");
+      }
+
+      // Étape 3 : Vérifier la filière
+      const filiereEntity = await manager.findOne(Filiere, {
+        where: { id: filiere },
+      });
+      if (!filiereEntity) {
+        throw new Error("Filière introuvable");
+      }
+
+      // Étape 4 : Vérifier le niveau
+      const niveauEntity = await manager.findOne(Niveau, {
+        where: { id: niveau },
+      });
+      if (!niveauEntity) {
+        throw new Error("Niveau introuvable");
+      }
+
+      // Étape 5 : Créer l'inscription
+      const inscription = manager.create(Inscription, {
+        dateInscription: new Date(), // Date actuelle pour l'inscription
+        etudiant,
+        annee: anneeAcademique,
+        filiere: filiereEntity,
+        niveau: niveauEntity,
+      });
 
       const inscriptionErrors = await validate(inscription);
       if (inscriptionErrors.length > 0) {
@@ -37,92 +104,102 @@ import { ParentEtudiant } from "../entity/ParentEtudiant";
       }
 
       const savedInscription = await manager.save(Inscription, inscription);
-      console.log("Inscription enregistré :", savedInscription);
+      console.log("Inscription enregistrée :", savedInscription);
 
-      // Création des associations Inscription
-      const userInscriptions: Inscription[] = [];
-      for (const userId of req.body.users) {
-        const user = await manager.findOne(User, { where: { id: userId } });
-        if (!user) {
-          throw new Error(`Utilisateur avec ID ${userId} introuvable`);
-        }
-
-        const userInscription = manager.create(Inscription, {
-          estActif: true,
-          inscription: savedInscription,
-          user: user,
+      // Étape 6 : Créer l'association ParentEtudiant
+      if (parent) {
+        const parentEtudiant = manager.create(ParentEtudiant, {
+          parent: { id: parent }, // Supposons que parent est l'ID du parent
+          etudiant,
         });
 
-        const userInscriptionErrors = await validate(userInscription);
-        if (userInscriptionErrors.length > 0) {
-          throw new Error(validateMessage(userInscriptionErrors));
+        const parentEtudiantErrors = await validate(parentEtudiant);
+        if (parentEtudiantErrors.length > 0) {
+          throw new Error(validateMessage(parentEtudiantErrors));
         }
 
-        userInscriptions.push(userInscription);
+        await manager.save(ParentEtudiant, parentEtudiant);
+        console.log("Association ParentEtudiant enregistrée");
       }
 
-      await manager.save(Inscription, userInscriptions);
-      console.log("Inscription enregistrés :", userInscriptions.length);
+      // Étape 7 : Gérer les pièces (facultatif, si vous souhaitez les enregistrer)
+      if (pieces && Array.isArray(pieces)) {
+        for (const pieceData of pieces) {
+          const piece = manager.create(Piece, {
+            typePiece: { id: pieceData.typePiece }, // Supposons que typePiece est l'ID
+            numeroPiece: pieceData.numeroPiece,
+            urlImage: pieceData.urlImage, // À gérer selon votre logique d'upload
+            etudiant,
+          });
 
-      return { inscription: savedInscription, nbUsers: userInscriptions.length };
+          const pieceErrors = await validate(piece);
+          if (pieceErrors.length > 0) {
+            throw new Error(validateMessage(pieceErrors));
+          }
+
+          await manager.save(Piece, piece);
+        }
+        console.log("Pièces enregistrées :", pieces.length);
+      }
+
+      return { inscription: savedInscription, etudiant };
     });
 
-    const message = `Le inscription ${result.inscription.nom} a bien été créé avec ${result.nbUsers} utilisateur(s) associé(s).`;
+    const message = `L'inscription a été créée avec succès pour l'étudiant ${result.etudiant.nom} ${result.etudiant.prenom}.`;
     return success(res, 201, result.inscription, message);
-
   } catch (error: any) {
-    console.log("Erreur transaction création inscription :", error);
+    console.error("Erreur lors de la création de l'inscription :", error);
 
     if (error.code === "ER_DUP_ENTRY") {
-      return generateServerErrorCode(res, 400, error, "Un inscription avec ce nom existe déjà.");
+      return generateServerErrorCode(res, 400, error, "Un étudiant avec cet email ou matricule existe déjà.");
     }
 
     return generateServerErrorCode(
       res,
       500,
       error,
-      error.message || "Le inscription n'a pas pu être créé. Réessayez plus tard."
+      error.message || "L'inscription n'a pas pu être créée. Réessayez plus tard."
     );
   }
-};*/
-
-
-
-export const createEtudiantEtParent = async (
-  etudiantData: Partial<Etudiant>,
-  parentData: Partial<Parent>
-) => {
-  const queryRunner = myDataSource.createQueryRunner();
-  await queryRunner.connect();
-  await queryRunner.startTransaction();
-
-  try {
-    // 1. Création du parent
-    const parent = queryRunner.manager.create(Parent, parentData);
-    await queryRunner.manager.save(parent);
-
-    // 2. Création de l’étudiant
-    const etudiant = queryRunner.manager.create(Etudiant, etudiantData);
-    await queryRunner.manager.save(etudiant);
-
-    // 3. Création de la relation ParentEtudiant
-    const parentEtudiant = queryRunner.manager.create(ParentEtudiant, {
-      etudiant,
-      parent,
-    });
-    await queryRunner.manager.save(parentEtudiant);
-
-    // 4. Valider la transaction
-    await queryRunner.commitTransaction();
-
-    return { etudiant, parent, parentEtudiant };
-  } catch (error) {
-    await queryRunner.rollbackTransaction();
-    throw error;
-  } finally {
-    await queryRunner.release();
-  }
 };
+
+
+
+// export const createEtudiantEtParent = async (
+//   etudiantData: Partial<Etudiant>,
+//   parentData: Partial<Parent>
+// ) => {
+//   const queryRunner = myDataSource.createQueryRunner();
+//   await queryRunner.connect();
+//   await queryRunner.startTransaction();
+
+//   try {
+//     // 1. Création du parent
+//     const parent = queryRunner.manager.create(Parent, parentData);
+//     await queryRunner.manager.save(parent);
+
+//     // 2. Création de l’étudiant
+//     const etudiant = queryRunner.manager.create(Etudiant, etudiantData);
+//     await queryRunner.manager.save(etudiant);
+
+//     // 3. Création de la relation ParentEtudiant
+//     const parentEtudiant = queryRunner.manager.create(ParentEtudiant, {
+//       etudiant,
+//       parent,
+//     });
+//     await queryRunner.manager.save(parentEtudiant);
+
+//     // 4. Valider la transaction
+//     await queryRunner.commitTransaction();
+
+//     return { etudiant, parent, parentEtudiant };
+//   } catch (error) {
+//     await queryRunner.rollbackTransaction();
+//     throw error;
+//   } finally {
+//     await queryRunner.release();
+//   }
+// };
 
 
 
@@ -164,7 +241,10 @@ export const getAllInscription = async (req: Request, res: Response) => {
 export const getAllInscriptions= async (req: Request, res: Response) => {
     await myDataSource.getRepository(Inscription).find({
         relations:{
-            
+          etudiant:true,
+          annee:true,
+          filiere:true,
+          niveau:true   
         }
     })
     .then((retour) => {
