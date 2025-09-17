@@ -10,7 +10,7 @@ export const emploisDuTempsRoutes = (router: express.Router) => {
     // router.delete('/api/emplois-du-temps/:id', checkPermission('DeleteEmploiDuTemps'), deleteEmploiDuTemps);
     // router.put('/api/emplois-du-temps/:id', checkPermission('EditEmploiDuTemps'), updateEmploiDuTemps);
 
-    // Routes sans permissions pour le développement
+
     router.post('/api/emplois-du-temps', createEmploiDuTemps);
     router.get('/api/emplois-du-temps', getAllEmploiDuTemps);
     router.get('/api/emplois-du-temps/:id', getEmploiDuTemps);

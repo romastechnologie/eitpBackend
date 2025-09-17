@@ -125,6 +125,7 @@ app.use(
 
 
 LibreRoutes(app);
+emploisDuTempsRoutes(app);
 
 authentication(app);
 app.use(isAuthenticatedOne);
@@ -200,7 +201,7 @@ parentsRoutes(app);
 
 //solidarité
 typeEmploiDuTempsRoutes(app);
-emploisDuTempsRoutes(app);
+// emploisDuTempsRoutes(app);
 qualificationsRoutes(app);
 languesRoutes(app);
 activitesRoutes(app);

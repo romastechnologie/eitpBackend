@@ -11,7 +11,7 @@ import { FiliereNiveauMatiere } from "../../gestionelearning/entity/FiliereNivea
 import { paginationAndRechercheInit } from "../../../configs/paginationAndRechercheInit";
 
 export const createEmploiDuTemps = async (req: Request, res: Response) => {
-    const { dateDebut, dateFin, typeEmploi, annee, cours: coursData } = req.body;
+    const { dateDebut, dateFin, typeEmploi, cours: coursData } = req.body;
 
     const queryRunner = myDataSource.createQueryRunner();
     await queryRunner.connect();
@@ -23,7 +23,7 @@ export const createEmploiDuTemps = async (req: Request, res: Response) => {
             dateDebut,
             dateFin,
             typeEmploi,
-            annee
+
         });
 
         const errors = await validate(emploiDuTemps);
@@ -86,14 +86,14 @@ export const createEmploiDuTemps = async (req: Request, res: Response) => {
     }
 };
 
-// ================= GET ALL =================
 export const getAllEmploiDuTemps = async (req: Request, res: Response) => {
     const { page, limit, searchTerm, startIndex, searchQueries } = paginationAndRechercheInit(req, EmploiDuTemps);
 
     try {
-        let reque = await myDataSource.getRepository(EmploiDuTemps)
+        // Enlever le 'await' ici - c'est la cause de l'erreur
+        let reque = myDataSource.getRepository(EmploiDuTemps)
             .createQueryBuilder('emploiDuTemps')
-            .leftJoinAndSelect('emploiDuTemps.annee', 'annee')
+            .leftJoinAndSelect('emploiDuTemps.typeEmploi', 'typeEmploi')
             .leftJoinAndSelect('emploiDuTemps.cours', 'cours')
             .leftJoinAndSelect('cours.filiereNiveauMatiere', 'filiereNiveauMatiere')
             .leftJoinAndSelect('filiereNiveauMatiere.filiere', 'filiere')
@@ -103,11 +103,15 @@ export const getAllEmploiDuTemps = async (req: Request, res: Response) => {
             .leftJoinAndSelect('cours.classe', 'classe')
             .where("emploiDuTemps.deletedAt IS NULL");
 
-        if (searchQueries.length > 0) {
+        // Vérifier que searchQueries existe et n'est pas vide
+        if (searchQueries && Array.isArray(searchQueries) && searchQueries.length > 0 && searchTerm) {
             reque.andWhere(new Brackets(qb => {
-                qb.where(searchQueries.join(' OR '), { keyword: `%${searchTerm}%` })
+                qb.where(searchQueries.join(' OR '), { keyword: `%${searchTerm}%` });
             }));
         }
+
+        // Ajouter un ordre pour des résultats cohérents
+        reque.orderBy('emploiDuTemps.createdAt', 'DESC');
 
         const [data, totalElements] = await reque
             .skip(startIndex)
@@ -116,15 +120,19 @@ export const getAllEmploiDuTemps = async (req: Request, res: Response) => {
 
         const message = 'La liste des emplois du temps a bien été récupérée.';
         const totalPages = Math.ceil(totalElements / limit);
+        
         return success(res, 200, { data, totalPages, totalElements, limit }, message);
 
     } catch (error) {
+        // Ajouter plus de détails dans les logs pour débugger
+        console.error('Erreur détaillée dans getAllEmploiDuTemps:', error);
+        console.error('Stack trace:', error.stack);
+        
         const message = `La liste des emplois du temps n'a pas pu être récupérée. Réessayez dans quelques instants.`;
         return generateServerErrorCode(res, 500, error, message);
     }
 };
 
-// ================= GET ONE =================
 export const getEmploiDuTemps = async (req: Request, res: Response) => {
     await myDataSource.getRepository(EmploiDuTemps).findOne({
         where: {
@@ -154,7 +162,6 @@ export const getEmploiDuTemps = async (req: Request, res: Response) => {
     });
 };
 
-// ================= UPDATE =================
 export const updateEmploiDuTemps = async (req: Request, res: Response) => {
     try {
         const emploiDuTempsRepo = myDataSource.getRepository(EmploiDuTemps);
@@ -288,7 +295,6 @@ export const updateEmploiDuTemps = async (req: Request, res: Response) => {
     }
 };
 
-// ================= DELETE =================
 export const deleteEmploiDuTemps = async (req: Request, res: Response) => {
     try {
         const id = Number(req.params.id);
