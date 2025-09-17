@@ -2,6 +2,8 @@ import { IsNotEmpty } from "class-validator";
 import { Column, CreateDateColumn, DeleteDateColumn, Entity, ManyToOne, OneToMany, PrimaryGeneratedColumn, Timestamp, UpdateDateColumn } from "typeorm";
 import { Cours } from "./Cours";
 import { TypeEmploiDuTemps } from "./TypeEmploiDuTemps";
+import { Filiere } from "../../gestionelearning/entity/Filiere";
+import { Niveau } from "../../gestionelearning/entity/Niveau";
 
 
 @Entity()
@@ -22,6 +24,12 @@ export class EmploiDuTemps {
 
     @ManyToOne(() => TypeEmploiDuTemps, type => type.emploisDuTemps, { nullable: false })
     typeEmploi: TypeEmploiDuTemps;
+
+    @ManyToOne(() => Filiere, (filiere) => filiere.emploisDuTemps, { nullable: false })
+    filiere: Filiere;
+
+    @ManyToOne(() => Niveau, (niveau) => niveau.emploisDuTemps, { nullable: false })
+    niveau: Niveau;
 
     @CreateDateColumn()
     createdAt: Timestamp;

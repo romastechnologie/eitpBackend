@@ -9,21 +9,30 @@ import { Classe } from "../entity/Classe";
 import { Professeur } from "../../gestionelearning/entity/Professeur";
 import { FiliereNiveauMatiere } from "../../gestionelearning/entity/FiliereNiveauMatiere";
 import { paginationAndRechercheInit } from "../../../configs/paginationAndRechercheInit";
+import { Filiere } from "../../gestionelearning/entity/Filiere";
+import { Niveau } from "../../gestionelearning/entity/Niveau";
 
 export const createEmploiDuTemps = async (req: Request, res: Response) => {
-    const { dateDebut, dateFin, typeEmploi, cours: coursData } = req.body;
+    const { dateDebut, dateFin, typeEmploi, filiereId, niveauId, cours: coursData } = req.body;
 
     const queryRunner = myDataSource.createQueryRunner();
     await queryRunner.connect();
     await queryRunner.startTransaction();
 
     try {
-        // Créer l'emploi du temps
+        const filiere = await myDataSource.getRepository(Filiere).findOneBy({ id: filiereId });
+        const niveau = await myDataSource.getRepository(Niveau).findOneBy({ id: niveauId });
+
+        if (!filiere || !niveau) {
+            return generateServerErrorCode(res, 400, null, "Filière ou niveau invalide.");
+        }
+
         let emploiDuTemps = queryRunner.manager.create(EmploiDuTemps, {
             dateDebut,
             dateFin,
             typeEmploi,
-
+            filiere,
+            niveau, 
         });
 
         const errors = await validate(emploiDuTemps);
@@ -34,7 +43,6 @@ export const createEmploiDuTemps = async (req: Request, res: Response) => {
 
         emploiDuTemps = await queryRunner.manager.save(emploiDuTemps);
 
-        // Créer les cours associés
         if (coursData && coursData.length > 0) {
             for (const coursInfo of coursData) {
                 const filiereNiveauMatiere = await myDataSource.getRepository(FiliereNiveauMatiere)
@@ -70,7 +78,8 @@ export const createEmploiDuTemps = async (req: Request, res: Response) => {
         }
 
         await queryRunner.commitTransaction();
-        return success(res, 201, emploiDuTemps, `L'emploi du temps "${emploiDuTemps.typeEmploi}" a bien été créé avec ses cours.`);
+
+        return success(res, 201, emploiDuTemps, `L'emploi du temps a bien été créé avec ses cours.`);
 
     } catch (error: any) {
         await queryRunner.rollbackTransaction();
@@ -86,15 +95,17 @@ export const createEmploiDuTemps = async (req: Request, res: Response) => {
     }
 };
 
+
 export const getAllEmploiDuTemps = async (req: Request, res: Response) => {
     const { page, limit, searchTerm, startIndex, searchQueries } = paginationAndRechercheInit(req, EmploiDuTemps);
 
     try {
-        // Enlever le 'await' ici - c'est la cause de l'erreur
         let reque = myDataSource.getRepository(EmploiDuTemps)
             .createQueryBuilder('emploiDuTemps')
             .leftJoinAndSelect('emploiDuTemps.typeEmploi', 'typeEmploi')
             .leftJoinAndSelect('emploiDuTemps.cours', 'cours')
+            // .leftJoinAndSelect('emploiDuTemps.cours', 'filiere')
+            // .leftJoinAndSelect('emploiDuTemps.cours', 'niveau')
             .leftJoinAndSelect('cours.filiereNiveauMatiere', 'filiereNiveauMatiere')
             .leftJoinAndSelect('filiereNiveauMatiere.filiere', 'filiere')
             .leftJoinAndSelect('filiereNiveauMatiere.niveau', 'niveau')
@@ -181,15 +192,28 @@ export const updateEmploiDuTemps = async (req: Request, res: Response) => {
         });
 
         if (!emploiDuTemps) {
-            return generateServerErrorCode(res, 400, "L'id n'existe pas", 'Cet emploi du temps n\'existe pas');
+            return generateServerErrorCode(res, 400, "L'id n'existe pas", "Cet emploi du temps n'existe pas");
         }
 
-        const { coursToCreate, coursToUpdate, coursToDelete, ...rest } = req.body;
+        const { coursToCreate, coursToUpdate, coursToDelete, filiereId, niveauId, ...rest } = req.body;
 
-        // Mise à jour des champs simples
+        // 🔹 Mettre à jour filière/niveau avant de traiter les cours
+        if (filiereId) {
+            const filiere = await myDataSource.getRepository(Filiere).findOneBy({ id: filiereId });
+            if (!filiere) return generateServerErrorCode(res, 400, null, "Filière invalide.");
+            emploiDuTemps.filiere = filiere;
+        }
+
+        if (niveauId) {
+            const niveau = await myDataSource.getRepository(Niveau).findOneBy({ id: niveauId });
+            if (!niveau) return generateServerErrorCode(res, 400, null, "Niveau invalide.");
+            emploiDuTemps.niveau = niveau;
+        }
+
+        // Mise à jour des autres champs simples
         emploiDuTempsRepo.merge(emploiDuTemps, rest);
 
-        // Création de nouveaux cours
+        // 🔹 Création de nouveaux cours
         if (Array.isArray(coursToCreate)) {
             for (const coursInfo of coursToCreate) {
                 const filiereNiveauMatiere = await myDataSource.getRepository(FiliereNiveauMatiere)
@@ -200,7 +224,7 @@ export const updateEmploiDuTemps = async (req: Request, res: Response) => {
                     .findOneBy({ id: coursInfo.classeId });
 
                 if (!filiereNiveauMatiere || !professeur || !classe) {
-                    return generateServerErrorCode(res, 400, null, 'Classe, professeur ou filière invalide.');
+                    return generateServerErrorCode(res, 400, null, "Classe, professeur ou filière invalide.");
                 }
 
                 const newCours = coursRepo.create({
@@ -214,7 +238,7 @@ export const updateEmploiDuTemps = async (req: Request, res: Response) => {
             }
         }
 
-        // Mise à jour des cours existants
+        // 🔹 Mise à jour des cours existants
         if (Array.isArray(coursToUpdate)) {
             for (const coursInfo of coursToUpdate) {
                 const filiereNiveauMatiere = await myDataSource.getRepository(FiliereNiveauMatiere)
@@ -225,7 +249,7 @@ export const updateEmploiDuTemps = async (req: Request, res: Response) => {
                     .findOneBy({ id: coursInfo.classeId });
 
                 if (!filiereNiveauMatiere || !professeur || !classe) {
-                    return generateServerErrorCode(res, 400, null, 'Classe, professeur ou filière invalide.');
+                    return generateServerErrorCode(res, 400, null, "Classe, professeur ou filière invalide.");
                 }
 
                 await coursRepo.update(
@@ -243,22 +267,24 @@ export const updateEmploiDuTemps = async (req: Request, res: Response) => {
             }
         }
 
-        // Suppression des cours
+        // 🔹 Suppression des cours
         if (Array.isArray(coursToDelete)) {
             for (const coursId of coursToDelete) {
                 await coursRepo.delete({ id: coursId });
             }
         }
 
-        // Validation
+        // 🔹 Validation de l'emploi du temps
         const errors = await validate(emploiDuTemps);
         if (errors.length > 0) {
             const message = validateMessage(errors);
             return generateServerErrorCode(res, 400, errors, message);
         }
 
+        // 🔹 Sauvegarde finale
         const savedEmploiDuTemps = await emploiDuTempsRepo.save(emploiDuTemps);
 
+        // 🔹 Récupérer avec relations pour réponse
         const emploiDuTempsWithCours = await emploiDuTempsRepo.findOne({
             where: { id: savedEmploiDuTemps.id },
             relations: [
@@ -281,19 +307,20 @@ export const updateEmploiDuTemps = async (req: Request, res: Response) => {
 
     } catch (error: any) {
         if (error instanceof ValidationError) {
-            return generateServerErrorCode(res, 400, error, 'Erreur de validation');
+            return generateServerErrorCode(res, 400, error, "Erreur de validation");
         }
         if (error.code === "ER_DUP_ENTRY") {
-            return generateServerErrorCode(res, 400, error, 'Cet emploi du temps existe déjà');
+            return generateServerErrorCode(res, 400, error, "Cet emploi du temps existe déjà");
         }
         return generateServerErrorCode(
             res,
             500,
             error,
-            `L'emploi du temps n'a pas pu être modifié. Réessayez dans quelques instants.`
+            "L'emploi du temps n'a pas pu être modifié. Réessayez dans quelques instants."
         );
     }
 };
+
 
 export const deleteEmploiDuTemps = async (req: Request, res: Response) => {
     try {
