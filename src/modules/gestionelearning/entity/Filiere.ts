@@ -2,6 +2,7 @@ import { IsNotEmpty } from "class-validator";
 import { Column, CreateDateColumn, DeleteDateColumn, Entity, JoinColumn, ManyToOne, OneToMany, PrimaryGeneratedColumn, Timestamp, UpdateDateColumn } from "typeorm";
 import { Inscription } from "./Inscription";
 import { FiliereNiveauMatiere } from "./FiliereNiveauMatiere";
+import { EmploiDuTemps } from "../../gestionsolidarite/entity/EmploiDuTemps";
 
 
 @Entity()
@@ -22,6 +23,9 @@ export class Filiere {
 
     @OneToMany(() => FiliereNiveauMatiere, filiereNiveauMatiere => filiereNiveauMatiere.filiere)
     filiereNiveauMatieres: FiliereNiveauMatiere[];
+
+    @OneToMany(() => EmploiDuTemps, (emploi) => emploi.filiere)
+    emploisDuTemps: EmploiDuTemps[];
 
     @CreateDateColumn()
     createdAt: Timestamp
