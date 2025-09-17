@@ -55,6 +55,7 @@ const articlestorage = multer.diskStorage({
 
 
 const fileFilter = (req, file, cb) => {
+  console.log("ttttttttt",file);
   // reject a file
   if (file.mimetype === 'image/jpeg' || file.mimetype === 'image/jpg' || file.mimetype === 'video/*' || file.mimetype === 'video/mp4' || file.mimetype === 'image/png' || file.mimetype === 'application/pdf' || file.mimetype === 'application/msword') {
     cb(null, true);

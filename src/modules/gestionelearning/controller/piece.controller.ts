@@ -16,8 +16,8 @@ export const createPiece = async (req: Request, res: Response) => {
     }
     await myDataSource.getRepository(Piece).save(piece)
     .then((piece_ : Piece | Piece[]) => {
-        const nomFichier = !isArray(piece_) ? piece_.nomFichier : '';
-        const message = `La pièce ${nomFichier} a bien été créée.`
+        const urlImage = !isArray(piece_) ? piece_.urlImage : '';
+        const message = `La pièce ${urlImage} a bien été créée.`
         return success(res,201, piece,message);
     })
     .catch(error => {

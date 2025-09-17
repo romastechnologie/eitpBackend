@@ -16,13 +16,13 @@ export class Piece {
     @IsNotEmpty({ message: "Le numéro est obligatoire" })
     numeroPiece: string
 
-    @Column({ unique: true, nullable: false })
-    @IsNotEmpty({ message: "Le nom est obligatoire" })
-    nomFichier: string
+    // @Column({ unique: true, nullable: false })
+    // @IsNotEmpty({ message: "Le nom est obligatoire" })
+    // nomFichier: string
 
     @Column({ nullable: false })
     @IsNotEmpty({ message: "Le lien est obligatoire" })
-    lienFichier: string
+    urlImage: string
 
     @ManyToOne(() => TypePiece, (typePiece) => typePiece.pieces)
     @JoinColumn()
