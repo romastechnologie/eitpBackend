@@ -5,6 +5,7 @@ import { Niveau } from "./Niveau";
 import { Filiere } from "./Filiere";
 import { Composition } from "./Composition";
 import { Question } from "./Question";
+import { Cours } from "../../gestionsolidarite/entity/Cours";
 
 
 @Entity()
@@ -35,6 +36,9 @@ export class FiliereNiveauMatiere {
     @ManyToOne(() => Question, (question) => question.filiereNiveauMatieres)
     question: Question
 
+    @OneToMany(() => Cours, cours => cours.filiereNiveauMatiere)
+    cours: Cours[];
+    
     @CreateDateColumn()
     createdAt: Timestamp
 

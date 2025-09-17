@@ -55,6 +55,7 @@ import { piecesRoutes } from "./modules/gestionelearning/route/piece.route";
 import { typePiecesRoutes } from "./modules/gestionelearning/route/typepiece.route";
 import { parentsRoutes } from "./modules/gestionelearning/route/parent.route";
 import { inscriptionsRoutes } from "./modules/gestionelearning/route/inscription.route";
+import { emploisDuTempsRoutes } from "./modules/gestionsolidarite/route/emploidutemps.route";
 
 
 require("dotenv").config();
@@ -125,6 +126,7 @@ app.use(
 
 
 LibreRoutes(app);
+emploisDuTempsRoutes(app);
 
 authentication(app);
 app.use(isAuthenticatedOne);
@@ -200,6 +202,7 @@ parentsRoutes(app);
 
 //solidarité
 typeEmploiDuTempsRoutes(app);
+// emploisDuTempsRoutes(app);
 qualificationsRoutes(app);
 languesRoutes(app);
 activitesRoutes(app);
