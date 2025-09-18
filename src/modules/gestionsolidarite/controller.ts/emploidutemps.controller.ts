@@ -95,6 +95,46 @@ export const createEmploiDuTemps = async (req: Request, res: Response) => {
     }
 };
 
+// controller.ts - Ajouter cette fonction
+export const checkClasseAvailability = async (req: Request, res: Response) => {
+  try {
+    const { classeId, jour, heureDebut, heureFin } = req.query;
+    
+    if (!classeId || !jour || !heureDebut || !heureFin) {
+      return generateServerErrorCode(res, 400, null, "Paramètres manquants");
+    }
+
+    // Vérifier s'il y a un cours existant dans cette classe pour ce créneau
+    const existingCours = await myDataSource.getRepository(Cours)
+      .createQueryBuilder('cours')
+      .leftJoin('cours.classe', 'classe')
+      .leftJoin('cours.emploiDuTemps', 'emploiDuTemps')
+      .where('classe.id = :classeId', { classeId: parseInt(classeId as string) })
+      .andWhere('cours.jour = :jour', { jour: jour as string })
+      .andWhere('emploiDuTemps.deletedAt IS NULL')
+      .andWhere(
+        new Brackets(qb => {
+          qb.where(
+            '(cours.heureDebut < :heureFin AND cours.heureFin > :heureDebut)',
+            { heureDebut: heureDebut as string, heureFin: heureFin as string }
+          );
+        })
+      )
+      .getOne();
+
+    const isAvailable = !existingCours;
+
+    return success(res, 200, { 
+      available: isAvailable,
+      hasConflict: !isAvailable,
+      conflictingCours: existingCours || null 
+    }, isAvailable ? "Classe disponible" : "Classe occupée");
+
+  } catch (error: any) {
+    console.error('Erreur lors de la vérification de disponibilité:', error);
+    return generateServerErrorCode(res, 500, error, "Erreur lors de la vérification");
+  }
+};
 
 export const getAllEmploiDuTemps = async (req: Request, res: Response) => {
     const { page, limit, searchTerm, startIndex, searchQueries } = paginationAndRechercheInit(req, EmploiDuTemps);
@@ -114,15 +154,13 @@ export const getAllEmploiDuTemps = async (req: Request, res: Response) => {
             .leftJoinAndSelect('cours.classe', 'classe')
             .where("emploiDuTemps.deletedAt IS NULL");
 
-        // Vérifier que searchQueries existe et n'est pas vide
         if (searchQueries && Array.isArray(searchQueries) && searchQueries.length > 0 && searchTerm) {
             reque.andWhere(new Brackets(qb => {
                 qb.where(searchQueries.join(' OR '), { keyword: `%${searchTerm}%` });
             }));
         }
 
-        // Ajouter un ordre pour des résultats cohérents
-        reque.orderBy('emploiDuTemps.createdAt', 'DESC');
+        reque.orderBy('emploiDuTemps.createdAt', 'ASC');
 
         const [data, totalElements] = await reque
             .skip(startIndex)
@@ -135,7 +173,7 @@ export const getAllEmploiDuTemps = async (req: Request, res: Response) => {
         return success(res, 200, { data, totalPages, totalElements, limit }, message);
 
     } catch (error) {
-        // Ajouter plus de détails dans les logs pour débugger
+
         console.error('Erreur détaillée dans getAllEmploiDuTemps:', error);
         console.error('Stack trace:', error.stack);
         
@@ -197,7 +235,6 @@ export const updateEmploiDuTemps = async (req: Request, res: Response) => {
 
         const { coursToCreate, coursToUpdate, coursToDelete, filiereId, niveauId, ...rest } = req.body;
 
-        // 🔹 Mettre à jour filière/niveau avant de traiter les cours
         if (filiereId) {
             const filiere = await myDataSource.getRepository(Filiere).findOneBy({ id: filiereId });
             if (!filiere) return generateServerErrorCode(res, 400, null, "Filière invalide.");
@@ -210,10 +247,8 @@ export const updateEmploiDuTemps = async (req: Request, res: Response) => {
             emploiDuTemps.niveau = niveau;
         }
 
-        // Mise à jour des autres champs simples
         emploiDuTempsRepo.merge(emploiDuTemps, rest);
 
-        // 🔹 Création de nouveaux cours
         if (Array.isArray(coursToCreate)) {
             for (const coursInfo of coursToCreate) {
                 const filiereNiveauMatiere = await myDataSource.getRepository(FiliereNiveauMatiere)
@@ -238,7 +273,6 @@ export const updateEmploiDuTemps = async (req: Request, res: Response) => {
             }
         }
 
-        // 🔹 Mise à jour des cours existants
         if (Array.isArray(coursToUpdate)) {
             for (const coursInfo of coursToUpdate) {
                 const filiereNiveauMatiere = await myDataSource.getRepository(FiliereNiveauMatiere)
@@ -267,24 +301,20 @@ export const updateEmploiDuTemps = async (req: Request, res: Response) => {
             }
         }
 
-        // 🔹 Suppression des cours
         if (Array.isArray(coursToDelete)) {
             for (const coursId of coursToDelete) {
                 await coursRepo.delete({ id: coursId });
             }
         }
 
-        // 🔹 Validation de l'emploi du temps
         const errors = await validate(emploiDuTemps);
         if (errors.length > 0) {
             const message = validateMessage(errors);
             return generateServerErrorCode(res, 400, errors, message);
         }
 
-        // 🔹 Sauvegarde finale
         const savedEmploiDuTemps = await emploiDuTempsRepo.save(emploiDuTemps);
 
-        // 🔹 Récupérer avec relations pour réponse
         const emploiDuTempsWithCours = await emploiDuTempsRepo.findOne({
             where: { id: savedEmploiDuTemps.id },
             relations: [
@@ -320,7 +350,6 @@ export const updateEmploiDuTemps = async (req: Request, res: Response) => {
         );
     }
 };
-
 
 export const deleteEmploiDuTemps = async (req: Request, res: Response) => {
     try {

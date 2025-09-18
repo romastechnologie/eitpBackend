@@ -1,5 +1,5 @@
 import { IsNotEmpty } from "class-validator";
-import { Column, Entity, ManyToOne, PrimaryGeneratedColumn } from "typeorm";
+import { Column, CreateDateColumn, DeleteDateColumn, Entity, ManyToOne, PrimaryGeneratedColumn, Timestamp, UpdateDateColumn } from "typeorm";
 import { EmploiDuTemps } from "./EmploiDuTemps";
 import { Professeur } from "../../gestionelearning/entity/Professeur";
 import { Classe } from "./Classe";
@@ -36,5 +36,14 @@ export class Cours {
 
     @ManyToOne(() => EmploiDuTemps, emploiDuTemps => emploiDuTemps.cours, { nullable: false })
     emploiDuTemps: EmploiDuTemps;
+
+    @CreateDateColumn()
+    createdAt: Timestamp;
+    
+    @UpdateDateColumn()
+    updatedAt: Timestamp;
+    
+    @DeleteDateColumn()
+    deletedAt: Timestamp;
 }
 
