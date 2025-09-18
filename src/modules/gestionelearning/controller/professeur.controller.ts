@@ -157,7 +157,10 @@ export const getProfesseur = async (req: Request, res: Response) => {
             id: parseInt(req.params.id),
         },
         relations: {
-            //professeur:true,
+            professeurMatieres:
+             {
+            matiere:true,
+    },
     },
     })
     .then(professeur => {
