@@ -28,11 +28,6 @@ export class Etudiant {
     @Column({ nullable: false })
     hauteur: string;
 
-
-    @Column({ nullable: false })
-    hauteur: string
-
-
     @Column({ nullable: false })
     mainGauche: string
 
