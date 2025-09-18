@@ -15,7 +15,7 @@ export const emploisDuTempsRoutes = (router: express.Router) => {
     router.get('/api/emplois-du-temps', getAllEmploiDuTemps);
     router.get('/api/emplois-du-temps/:id', getEmploiDuTemps);
     router.get('/api/emplois-du-temps/check-classe', getEmploiDuTemps);
-    router.get('/api/emplois-du-temps/check-classe-availability', checkClasseAvailability);
+    router.get('/api/check-classe-availability', checkClasseAvailability);
     router.delete('/api/emplois-du-temps/:id', deleteEmploiDuTemps);
     router.put('/api/emplois-du-temps/:id', updateEmploiDuTemps);
 };
