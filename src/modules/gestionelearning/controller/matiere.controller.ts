@@ -59,7 +59,7 @@ export const getAllMatiere = async (req: Request, res: Response) => {
 export const getAllMatieres= async (req: Request, res: Response) => {
     await myDataSource.getRepository(Matiere).find({
         relations:{
-            
+            professeurMatieres : true      
         }
     })
     .then((retour) => {

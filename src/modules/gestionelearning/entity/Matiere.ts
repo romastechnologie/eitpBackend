@@ -1,6 +1,8 @@
 import { IsNotEmpty } from "class-validator";
-import { Column, CreateDateColumn, DeleteDateColumn, Entity, OneToMany, PrimaryGeneratedColumn, Timestamp, UpdateDateColumn } from "typeorm";
+import { Column, CreateDateColumn, DeleteDateColumn, Entity, ManyToOne, OneToMany, PrimaryGeneratedColumn, Timestamp, UpdateDateColumn } from "typeorm";
 import { FiliereNiveauMatiere } from "./FiliereNiveauMatiere";
+import { Professeur } from "./Professeur";
+import { ProfesseurMatiere } from "./ProfesseurMatiere";
 
 
 @Entity()
@@ -18,6 +20,9 @@ export class Matiere {
 
     @OneToMany(() => FiliereNiveauMatiere, filiereNiveauMatiere => filiereNiveauMatiere.matiere)
     filiereNiveauMatieres: FiliereNiveauMatiere[];
+
+    @OneToMany(() => ProfesseurMatiere, (professeurMatiere) => professeurMatiere.matiere)
+    professeurMatieres: ProfesseurMatiere[]
 
     @CreateDateColumn()
     createdAt: Timestamp

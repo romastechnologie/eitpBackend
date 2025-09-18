@@ -4,6 +4,7 @@ import { Column, CreateDateColumn, DeleteDateColumn, Entity, JoinColumn, ManyToO
 import { Composition } from "./Composition";
 import { Piece } from "./Piece";
 import { Cours } from "../../gestionsolidarite/entity/Cours";
+import { ProfesseurMatiere } from "./ProfesseurMatiere";
 
 
 @Entity()
@@ -11,11 +12,11 @@ export class Professeur {
     @PrimaryGeneratedColumn()
     id: number
 
-    @Column({ unique: true, nullable: false })
+    @Column({ nullable: false })
     @IsNotEmpty({ message: "Le nom est obligatoire" })
     nom: string
 
-    @Column({ unique: true, nullable: false })
+    @Column({ nullable: false })
     @IsNotEmpty({ message: "Le prénom est obligatoire" })
     prenom: string
 
@@ -27,10 +28,6 @@ export class Professeur {
     @IsNotEmpty({ message: "L' email est obligatoire" })
     email: string
 
-    // @Column({ nullable: false })
-    // @IsNotEmpty({ message: "Le mot de passe est obligatoire" })
-    // password: string
-
     @Column({ nullable: true })
     dateNaissance: Date
 
@@ -40,6 +37,10 @@ export class Professeur {
 
     @Column({ nullable: true })
     telProfesseur2: string
+
+    @OneToMany(() => ProfesseurMatiere, (professeurMatiere) => professeurMatiere.professeur)
+    professeurMatieres: ProfesseurMatiere[]
+
 
     @OneToMany(() => Composition, (composition) => composition.professeur)
     compositions: Composition[];
