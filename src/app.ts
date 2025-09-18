@@ -131,6 +131,7 @@ app.use(
 
 LibreRoutes(app);
 emploisDuTempsRoutes(app);
+professeursRoutes(app);
 
 authentication(app);
 app.use(isAuthenticatedOne);
@@ -194,7 +195,7 @@ etudiantsRoutes(app);
 filieresRoutes(app);
 forumsRoutes(app);
 matieresRoutes(app);
-professeursRoutes(app);
+// professeursRoutes(app);
 questionsRoutes(app);
 reponseRoutes(app);
 propositionReponseRoutes(app);

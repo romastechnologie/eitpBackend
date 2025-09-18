@@ -1,5 +1,5 @@
 import * as express from 'express';
-import { createEmploiDuTemps, deleteEmploiDuTemps, getAllEmploiDuTemps, getEmploiDuTemps, updateEmploiDuTemps } from '../controller.ts/emploidutemps.controller';
+import { checkClasseAvailability, createEmploiDuTemps, deleteEmploiDuTemps, getAllEmploiDuTemps, getEmploiDuTemps, updateEmploiDuTemps } from '../controller.ts/emploidutemps.controller';
 import { checkPermission } from '../../../middlewares/auth.middleware';
 
 export const emploisDuTempsRoutes = (router: express.Router) => {
@@ -14,6 +14,8 @@ export const emploisDuTempsRoutes = (router: express.Router) => {
     router.post('/api/emplois-du-temps', createEmploiDuTemps);
     router.get('/api/emplois-du-temps', getAllEmploiDuTemps);
     router.get('/api/emplois-du-temps/:id', getEmploiDuTemps);
+    router.get('/api/emplois-du-temps/check-classe', getEmploiDuTemps);
+    router.get('/api/check-classe-availability', checkClasseAvailability);
     router.delete('/api/emplois-du-temps/:id', deleteEmploiDuTemps);
     router.put('/api/emplois-du-temps/:id', updateEmploiDuTemps);
 };
