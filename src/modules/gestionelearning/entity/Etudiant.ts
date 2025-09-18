@@ -25,8 +25,34 @@ export class Etudiant {
     @IsNotEmpty({ message: "Le prénom est obligatoire" })
     prenom: string
 
+    @Column({ nullable: false })
+    hauteur: string;
 
-     @Column({ unique: true, nullable: false })
+    @Column({ nullable: false })
+    mainGauche: string
+
+    @Column({ nullable: false })
+    mainDroite: string
+
+    @Column({ nullable: false })
+    visionDroite: string
+
+    @Column({ nullable: false })
+    visionGauche: string
+
+    @Column({ nullable: false })
+    typeDeSang: string
+
+    @Column({ nullable: false })
+    poids: string
+
+    @Column({ nullable: false })
+    jambeDroite: string
+
+    @Column({ nullable: false })
+    jambeGauche: string
+
+    @Column({ unique: true, nullable: false })
     @IsNotEmpty({ message: "Le sexe est obligatoire" })
     sexe: string
 

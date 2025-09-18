@@ -6,8 +6,10 @@ import { Brackets } from "typeorm";
 import { checkRelationsOneToMany } from "../../../configs/checkRelationsOneToManyBeforDelete";
 import { Professeur } from "../entity/Professeur";
 import { paginationAndRechercheInit } from "../../../configs/paginationAndRechercheInit";
+import { ProfesseurMatiere } from "../entity/ProfesseurMatiere";
+import { Matiere } from "../entity/Matiere";
 
-export const createProfesseur = async (req: Request, res: Response) => {
+/*export const createProfesseur = async (req: Request, res: Response) => {
     const professeur = myDataSource.getRepository(Professeur).create(req.body);
     const errors = await validate(professeur)
     if (errors.length > 0) {
@@ -30,13 +32,92 @@ export const createProfesseur = async (req: Request, res: Response) => {
         const message = `Le professeur n'a pas pu être ajouté. Réessayez dans quelques instants.`
         return generateServerErrorCode(res,500,error,message)
     })
-}
+}*/
+
+
+export const createProfesseur = async (req: Request, res: Response) => {
+  console.log("Corps reçu :", req.body);
+
+  const professeurData = {
+    nom: req.body.nom,
+    prenom: req.body.prenom,
+    npi: req.body.npi,
+    email: req.body.email,
+    dateNaissance: req.body.dateNaissance,
+    telProfesseur1: req.body.telProfesseur1,
+    telProfesseur2: req.body.telProfesseur2,
+  };
+
+  if (!Array.isArray(req.body.matieres) || req.body.matieres.length === 0) {
+    return generateServerErrorCode(res, 400, null, "Le professeur doit avoir au moins une matière associée.");
+  }
+
+  try {
+    const result = await myDataSource.manager.transaction(async (manager) => {
+      // Création du professeur
+      const professeur = manager.create(Professeur, professeurData);
+
+      const professeurErrors = await validate(professeur);
+      if (professeurErrors.length > 0) {
+        throw new Error(validateMessage(professeurErrors));
+      }
+
+      const savedProfesseur = await manager.save(Professeur, professeur);
+      console.log("Professeur enregistré :", savedProfesseur);
+
+      // Création des associations ProfesseurMatiere
+      const professeurMatieres: ProfesseurMatiere[] = [];
+      for (const matiereId of req.body.matieres) {
+        const matiere = await manager.findOne(Matiere, { where: { id: matiereId } });
+        if (!matiere) {
+          throw new Error(`Matière avec ID ${matiereId} introuvable`);
+        }
+
+        const professeurMatiere = manager.create(ProfesseurMatiere, {
+          professeur: savedProfesseur,
+          matiere: matiere,
+        });
+
+        const pmErrors = await validate(professeurMatiere);
+        if (pmErrors.length > 0) {
+          throw new Error(validateMessage(pmErrors));
+        }
+
+        professeurMatieres.push(professeurMatiere);
+      }
+
+      await manager.save(ProfesseurMatiere, professeurMatieres);
+      console.log("ProfesseurMatiere enregistrés :", professeurMatieres.length);
+
+      return { professeur: savedProfesseur, nbMatieres: professeurMatieres.length };
+    });
+
+    const message = `Le professeur ${result.professeur.nom} ${result.professeur.prenom} a bien été créé avec ${result.nbMatieres} matière(s) associée(s).`;
+    return success(res, 201, result.professeur, message);
+
+  } catch (error: any) {
+    console.log("Erreur transaction création professeur :", error);
+
+    if (error.code === "ER_DUP_ENTRY") {
+      return generateServerErrorCode(res, 400, error, "Un professeur avec cet email ou NPI existe déjà.");
+    }
+
+    return generateServerErrorCode(
+      res,
+      500,
+      error,
+      error.message || "Le professeur n'a pas pu être créé. Réessayez plus tard."
+    );
+  }
+};
 
 
 export const getAllProfesseur = async (req: Request, res: Response) => {
     const { page, limit, searchTerm, startIndex, searchQueries } = paginationAndRechercheInit(req, Professeur);
     let reque = await myDataSource.getRepository(Professeur)
     .createQueryBuilder('professeur')
+       .leftJoinAndSelect("professeur.professeurMatieres", "profeseurMatiere")   
+      .leftJoinAndSelect("profeseurMatiere.matiere", "matiere")      
     .where("professeur.deletedAt IS NULL");
     if (searchQueries.length > 0) {
         reque.andWhere(new Brackets(qb => {
@@ -76,7 +157,10 @@ export const getProfesseur = async (req: Request, res: Response) => {
             id: parseInt(req.params.id),
         },
         relations: {
-            //professeur:true,
+            professeurMatieres:
+             {
+            matiere:true,
+    },
     },
     })
     .then(professeur => {
