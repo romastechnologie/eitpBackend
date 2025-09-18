@@ -2,7 +2,7 @@ import { myDataSource } from "../../../configs/data-source";
 import { generateServerErrorCode, success, validateMessage } from "../../../configs/response";
 import { Request, Response } from "express";
 import { ValidationError, isArray, validate } from "class-validator";
-import { Brackets } from "typeorm";
+import { Brackets, IsNull } from "typeorm";
 import { checkRelationsOneToMany } from "../../../configs/checkRelationsOneToManyBeforDelete";
 import { Professeur } from "../entity/Professeur";
 import { paginationAndRechercheInit } from "../../../configs/paginationAndRechercheInit";
@@ -149,6 +149,81 @@ export const getAllProfesseurs= async (req: Request, res: Response) => {
         //res.status(500).json({ message, data: error })
         return generateServerErrorCode(res,500,error,message)
     })
+};
+
+export const getProfesseursByMatiere = async (req: Request, res: Response) => {
+  try {
+    const matiereId = parseInt(req.params.matiereId);
+    
+    if (isNaN(matiereId) || matiereId <= 0) {
+      const message = "L'ID de la matière est invalide.";
+      return generateServerErrorCode(res, 400, null, message);
+    }
+
+    // Vérifier que la matière existe
+    const matiere = await myDataSource.getRepository(Matiere).findOne({
+      where: {
+        id: matiereId,
+        deletedAt: IsNull() // Soft delete
+      }
+    });
+
+    if (!matiere) {
+      const message = `La matière avec l'ID ${matiereId} n'existe pas.`;
+      return generateServerErrorCode(res, 404, null, message);
+    }
+
+    // Récupérer les professeurs associés à cette matière via ProfesseurMatiere
+    const professeurs = await myDataSource.getRepository(Professeur)
+      .createQueryBuilder('professeur')
+      .leftJoinAndSelect('professeur.professeurMatieres', 'professeurMatiere')
+      .leftJoinAndSelect('professeurMatiere.matiere', 'matiere')
+      .where('professeur.deletedAt IS NULL')
+      .andWhere('professeurMatiere.matiere.id = :matiereId', { matiereId })
+      .andWhere('matiere.deletedAt IS NULL')
+      .select([
+        'professeur.id',
+        'professeur.nom',
+        'professeur.prenom',
+        'professeur.npi',
+        'professeur.email',
+        'professeur.dateNaissance',
+        'professeur.telProfesseur1',
+        'professeur.telProfesseur2',
+        'professeurMatiere.id',
+        'matiere.id',
+        'matiere.libelle'
+      ])
+      .orderBy('professeur.nom', 'ASC')
+      .addOrderBy('professeur.prenom', 'ASC')
+      .getMany();
+
+    // Si limit=0, on retourne tout ; sinon on peut ajouter la pagination
+    const limit = req.query.limit ? parseInt(req.query.limit as string) : 0;
+    let result = professeurs;
+
+    if (limit > 0) {
+      // Si vous voulez ajouter la pagination, implémentez-la ici
+      // Pour l'instant, on retourne tout si limit=0 ou pas spécifié
+      result = professeurs.slice(0, limit);
+    }
+
+    const message = `Les professeurs pour la matière ${matiere.libelle} ont été récupérés avec succès.`;
+    
+    return success(res, 200, {
+      data: result,
+      totalElements: professeurs.length,
+      matiere: {
+        id: matiere.id,
+        libelle: matiere.libelle
+      }
+    }, message);
+
+  } catch (error: any) {
+    console.error('Erreur lors de la récupération des professeurs par matière:', error);
+    const message = `Impossible de récupérer les professeurs pour cette matière. Réessayez dans quelques instants.`;
+    return generateServerErrorCode(res, 500, error, message);
+  }
 };
 
 export const getProfesseur = async (req: Request, res: Response) => {

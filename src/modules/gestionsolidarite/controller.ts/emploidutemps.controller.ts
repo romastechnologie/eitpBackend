@@ -15,6 +15,9 @@ import { Niveau } from "../../gestionelearning/entity/Niveau";
 export const createEmploiDuTemps = async (req: Request, res: Response) => {
     const { dateDebut, dateFin, typeEmploi, filiereId, niveauId, cours: coursData } = req.body;
 
+    console.log("Données reçues:", { dateDebut, dateFin, typeEmploi, filiereId, niveauId, coursData });
+    console.log("estEnLigne values:", coursData?.map(c => ({ jour: c.jour, estEnLigne: c.estEnLigne, type: typeof c.estEnLigne })));
+    
     const queryRunner = myDataSource.createQueryRunner();
     await queryRunner.connect();
     await queryRunner.startTransaction();
@@ -57,15 +60,15 @@ export const createEmploiDuTemps = async (req: Request, res: Response) => {
                 }
 
                 const cours = queryRunner.manager.create(Cours, {
-                    heureDebut: coursInfo.heureDebut,
-                    heureFin: coursInfo.heureFin,
-                    jour: coursInfo.jour,
-                    estEnLigne: coursInfo.estEnLigne || false,
-                    emploiDuTemps,
-                    filiereNiveauMatiere,
-                    professeur,
-                    classe
-                });
+                heureDebut: coursInfo.heureDebut,
+                heureFin: coursInfo.heureFin,
+                jour: coursInfo.jour,
+                estEnLigne: coursInfo.estEnLigne === true || coursInfo.estEnLigne === "on" || coursInfo.estEnLigne === 1,
+                emploiDuTemps,
+                filiereNiveauMatiere,
+                professeur,
+                classe
+            });
 
                 const coursErrors = await validate(cours);
                 if (coursErrors.length > 0) {
@@ -95,7 +98,6 @@ export const createEmploiDuTemps = async (req: Request, res: Response) => {
     }
 };
 
-// controller.ts - Ajouter cette fonction
 export const checkClasseAvailability = async (req: Request, res: Response) => {
   try {
     const { classeId, jour, heureDebut, heureFin } = req.query;
@@ -292,7 +294,7 @@ export const updateEmploiDuTemps = async (req: Request, res: Response) => {
                         heureDebut: coursInfo.heureDebut,
                         heureFin: coursInfo.heureFin,
                         jour: coursInfo.jour,
-                        estEnLigne: coursInfo.estEnLigne,
+                        estEnLigne: coursInfo.estEnLigne ?? false,
                         filiereNiveauMatiere,
                         professeur,
                         classe

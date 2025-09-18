@@ -1,5 +1,5 @@
 import * as express from 'express';
-import { createProfesseur, deleteProfesseur, getAllProfesseur, getAllProfesseurs, getProfesseur, updateProfesseur } from '../controller/professeur.controller';
+import { createProfesseur, deleteProfesseur, getAllProfesseur, getAllProfesseurs, getProfesseur, getProfesseursByMatiere, updateProfesseur } from '../controller/professeur.controller';
 import { checkPermission } from '../../../middlewares/auth.middleware';
 
 export  const professeursRoutes =  (router: express.Router) => {
@@ -14,6 +14,7 @@ export  const professeursRoutes =  (router: express.Router) => {
   router.get('/api/all/professeurs',getAllProfesseur);
   router.get('/api/professeurs', getAllProfesseurs);
   router.get('/api/professeurs/:id',getProfesseur);
+  router.get('/api/professeurs/matiere/:matiereId', getProfesseursByMatiere);
   router.delete('/api/professeurs/:id',deleteProfesseur);
   router.put('/api/professeurs/:id', updateProfesseur);
 
