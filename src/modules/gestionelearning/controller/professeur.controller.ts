@@ -165,14 +165,14 @@ export const getProfesseur = async (req: Request, res: Response) => {
     })
     .then(professeur => {
         if(professeur === null) {
-          const message = `L'étudiant demandé n'existe pas. Réessayez avec un autre identifiant.`
+          const message = `Le professeur demandé n'existe pas. Réessayez avec un autre identifiant.`
           return generateServerErrorCode(res,400,"L'id n'existe pas",message)
         }
-        const message = `Le professeur de méda a bien été trouvé.`
+        const message = `Le professeur a bien été trouvé.`
         return success(res,200, professeur,message);
     })
     .catch(error => {
-        const message = `L'étudiant n'a pas pu être récupéré. Réessayez dans quelques instants.`
+        const message = `Le professeur n'a pas pu être récupéré. Réessayez dans quelques instants.`
         return generateServerErrorCode(res,500,error,message)
     })
 };

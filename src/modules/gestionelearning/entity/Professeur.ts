@@ -5,6 +5,7 @@ import { Composition } from "./Composition";
 import { Piece } from "./Piece";
 import { Cours } from "../../gestionsolidarite/entity/Cours";
 import { ProfesseurMatiere } from "./ProfesseurMatiere";
+import { Quartier } from "../../gestiondeszones/entity/Quartier";
 
 
 @Entity()
@@ -50,6 +51,9 @@ export class Professeur {
 
     @OneToMany(() => Cours, cours => cours.professeur)
     cours: Cours[];
+
+    @ManyToOne(() => Quartier, quartier => quartier.professeurs)
+    quartier: Quartier;
 
     @CreateDateColumn()
     createdAt: Timestamp

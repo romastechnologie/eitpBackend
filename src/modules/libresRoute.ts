@@ -34,7 +34,7 @@ import {
 } from "./gestiondesfaqs/controller/tag.controller";
 import {
   getAllCommune,
-  getAllCommune2,
+ 
 } from "./gestiondeszones/controller/commune.controller";
 
 import { getDistanceByType } from "./gestiondespoids/controller/distance.controller";
@@ -96,7 +96,6 @@ export const LibreRoutes = (router: express.Router) => {
 
   //commune
   router.get("/api/communes", getAllCommune);
-  router.get("/api/communes2", getAllCommune2);
   
 
   

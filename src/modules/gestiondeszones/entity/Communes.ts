@@ -1,34 +1,38 @@
 import { IsNotEmpty } from "class-validator";
-import { Column, CreateDateColumn, DeleteDateColumn, Entity, JoinColumn, ManyToMany, ManyToOne, OneToMany, OneToOne, PrimaryGeneratedColumn, Timestamp, UpdateDateColumn } from "typeorm";
+import { Column, CreateDateColumn, DeleteDateColumn, Entity, JoinColumn, ManyToOne, OneToMany, OneToOne, PrimaryGeneratedColumn, Timestamp, UpdateDateColumn } from "typeorm";
+import { Departement } from "./Departement";
+import { Arrondissement } from "./Arrondissement";
 import { User } from "../../gestiondesutilisateurs/entity/user.entity";
 
 
-@Entity()
-export class Commune{
+@Entity('commune')
+export class Commune {
     @PrimaryGeneratedColumn()
-    id:number
+    id: number
 
-    @Column({unique:true, nullable:true})
-    @IsNotEmpty({ message:"Le code est obligatoire" })
-    code:string
+    @Column({ unique: true, nullable: true })
+    @IsNotEmpty({ message: "Le code est obligatoire" })
+    code: string
 
-    @Column({unique:true, nullable:true})
-    @IsNotEmpty({ message:"Le libellé est obligatoire" })
-    libelle:string
+    @Column({ unique: true, nullable: true })
+    @IsNotEmpty({ message: "Le libellé est obligatoire" })
+    libelle: string
 
-    @ManyToMany(() => User, (user) => user.communes)
-    users: User[];
+    @ManyToOne(() => Departement, (departement) => departement.communes)
+    public departement: Departement
 
-   
-    @ManyToOne(()=>User)
-    userCreation:User
-    
+    @OneToMany(() => Arrondissement, (arrondissement) => arrondissement.commune)
+    arrondissements: Arrondissement[]
+
+    @ManyToOne(() => User)
+    userCreation: User
+
     @CreateDateColumn()
-    createdAt:Timestamp
-    
+    createdAt: Timestamp
+
     @UpdateDateColumn()
-    updatedAt:Timestamp;
+    updatedAt: Timestamp;
 
     @DeleteDateColumn()
-    deletedAt:Timestamp;
+    deletedAt: Timestamp;
 }

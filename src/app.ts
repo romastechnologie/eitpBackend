@@ -56,6 +56,10 @@ import { typePiecesRoutes } from "./modules/gestionelearning/route/typepiece.rou
 import { parentsRoutes } from "./modules/gestionelearning/route/parent.route";
 import { inscriptionsRoutes } from "./modules/gestionelearning/route/inscription.route";
 import { emploisDuTempsRoutes } from "./modules/gestionsolidarite/route/emploidutemps.route";
+import { arrondissementsRoutes } from "./modules/gestiondeszones/route/arrondissement.route";
+import { quartiersRoutes } from "./modules/gestiondeszones/route/quartier.route";
+import { departementsRoutes } from "./modules/gestiondeszones/route/departement.route";
+
 
 
 require("dotenv").config();
@@ -210,6 +214,13 @@ classesRoutes(app);
 categorieOffresRoutes(app);
 offresRoutes(app);
 inscriptionsRoutes(app);
+
+//zones
+arrondissementsRoutes(app);
+communesRoutes(app);
+quartiersRoutes(app);
+departementsRoutes(app);
+
 
 
 //Autorisation des entêtes
