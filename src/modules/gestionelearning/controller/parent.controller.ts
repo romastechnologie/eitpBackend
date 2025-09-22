@@ -2,12 +2,15 @@ import { myDataSource } from "../../../configs/data-source";
 import { generateServerErrorCode, success, validateMessage } from "../../../configs/response";
 import { Request, Response } from "express";
 import { ValidationError, isArray, validate } from "class-validator";
-import { Brackets } from "typeorm";
+import { Brackets, DeepPartial } from "typeorm";
 import { checkRelationsOneToMany } from "../../../configs/checkRelationsOneToManyBeforDelete";
 import { Parent } from "../entity/Parent";
 import { paginationAndRechercheInit } from "../../../configs/paginationAndRechercheInit";
+import { ParentEtudiant } from "../entity/ParentEtudiant";
+import { Etudiant } from "../entity/Etudiant";
 
-export const createParent = async (req: Request, res: Response) => {
+
+/* export const createParent = async (req: Request, res: Response) => {
     const parent = myDataSource.getRepository(Parent).create(req.body);
     const errors = await validate(parent)
     if (errors.length > 0) {
@@ -30,7 +33,80 @@ export const createParent = async (req: Request, res: Response) => {
         const message = `Le parent n'a pas pu être ajouté. Réessayez dans quelques instants.`
         return generateServerErrorCode(res,500,error,message)
     })
-}
+} */
+
+
+
+
+export const createParent = async (req: Request, res: Response) => {
+  const { parentetudiant, quartierId, ...parentData } = req.body;
+
+  console.log("req.body:", JSON.stringify(req.body, null, 2)); // Journal pour déboguer
+
+  // Vérifier que parentData est un objet valide
+  if (!parentData || typeof parentData !== "object") {
+    return generateServerErrorCode(res, 400, null, "Les données du parent sont invalides.");
+  }
+
+  // Vérifier que parentetudiant est fourni et valide
+  if (!parentetudiant || typeof parentetudiant.etudiantId !== "number") {
+    return generateServerErrorCode(res, 400, null, "Aucun étudiant valide fourni.");
+  }
+
+  // Création du parent
+  const parent = myDataSource.getRepository(Parent).create({
+    ...parentData,
+    quartier: quartierId ? { id: quartierId } : undefined,
+  } as DeepPartial<Parent>);
+
+  // Validation du parent
+  const parentErrors = await validate(parent);
+  if (parentErrors.length > 0) {
+    const message = parentErrors.map((err) => Object.values(err.constraints)).join(", ");
+    return generateServerErrorCode(res, 400, parentErrors, message);
+  }
+
+  try {
+    const savedParent = await myDataSource.transaction(async (transactionalEntityManager) => {
+      // Sauvegarde du parent
+      const savedParent = await transactionalEntityManager.getRepository(Parent).save(parent);
+
+      // Vérifier si l'étudiant existe
+      const etudiant = await transactionalEntityManager
+        .getRepository(Etudiant)
+        .findOne({ where: { id: parentetudiant.etudiantId } });
+
+      if (!etudiant) {
+        throw new Error(`L'étudiant avec l'ID ${parentetudiant.etudiantId} n'existe pas.`);
+      }
+
+      // Créer la relation ParentEtudiant
+      const parentEtudiant = transactionalEntityManager.getRepository(ParentEtudiant).create({
+        parent: savedParent,
+        etudiant,
+      });
+
+      await transactionalEntityManager.getRepository(ParentEtudiant).save(parentEtudiant);
+
+      return savedParent;
+    });
+
+    const message = `Le parent ${req.body.nom} ${req.body.prenom} a bien été créé et lié à l'étudiant ${parentetudiant.etudiantId}.`;
+    return success(res, 201, { parent: savedParent, parentetudiant }, message);
+  } catch (error: any) {
+    if (error instanceof ValidationError) {
+      return generateServerErrorCode(res, 400, error, "Une erreur de validation est survenue.");
+    }
+    if (error.code === "ER_DUP_ENTRY") {
+      return generateServerErrorCode(res, 400, error, "Ce parent ou cette relation existe déjà.");
+    }
+    const message = `Le parent et sa relation n'ont pas pu être ajoutés. Réessayez dans quelques instants.`;
+    return generateServerErrorCode(res, 500, error, message);
+  }
+};
+
+
+
 
 
 export const getAllParent = async (req: Request, res: Response) => {

@@ -11,7 +11,7 @@ export class Inscription {
     @PrimaryGeneratedColumn()
     id: number
 
-    @Column({ unique: true, nullable: false })
+    @Column({ nullable: false })
     @IsNotEmpty({ message: "La date est obligatoire" })
     dateInscription: Date
 
