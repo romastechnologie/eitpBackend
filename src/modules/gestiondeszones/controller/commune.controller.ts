@@ -4,8 +4,10 @@ import { Request, Response } from "express";
 import { ValidationError, validate } from "class-validator";
 import { Brackets } from "typeorm";
 import { checkRelationsOneToMany } from "../../../configs/checkRelationsOneToManyBeforDelete";
-import { paginationAndRechercheInit } from "../../../configs/paginationAndRechercheInit";
 import { Commune } from "../entity/Communes";
+import { paginationAndRechercheInit } from "../../../configs/paginationAndRechercheInit";
+
+
 
 export const createCommune = async (req: Request, res: Response) => {
     const commune = myDataSource.getRepository(Commune).create(req.body);
@@ -16,8 +18,8 @@ export const createCommune = async (req: Request, res: Response) => {
     }
     await myDataSource.getRepository(Commune).save(commune)
     .then(commune => {
-        const message = `La commune ${req.body.libelle} a bien été créée.`
-        return success(res,201,commune,message);
+        const message = `La commune ${req.body.id} a bien été créé.`
+        return success(res,201, commune,message);
     })
     .catch(error => {
         if(error instanceof ValidationError) {
@@ -32,22 +34,17 @@ export const createCommune = async (req: Request, res: Response) => {
 }
 
 export const getAllCommune = async (req: Request, res: Response) => {
-    const { page, limit, searchTerm, startIndex, searchQueries } = paginationAndRechercheInit(req, Commune);
-    var requu = myDataSource.getRepository(Commune)
-    .createQueryBuilder("c")
-    .orderBy('c.libelle', "ASC")
-
-    if(searchTerm && searchTerm != ""){
-        requu = requu.andWhere("(c.code LIKE :keyword OR c.libelle LIKE :keyword)", { keyword: `%${searchTerm}%` })
-    }
-    await requu
-    .skip(startIndex)
-    .take(limit)
-    .getManyAndCount()
-    .then(([data, totalElements]) => {
+    await myDataSource.getRepository(Commune).find({
+        relations:{
+            departement:true,
+            arrondissements: {
+            quartiers:true,      
+    },
+    },
+    })
+    .then((retour) => {
         const message = 'La liste des communes a bien été récupérée.';
-        const totalPages = Math.ceil(totalElements / limit);
-        return success(res,200,{data, totalPages, totalElements, limit}, message);
+        return success(res,200,{data:retour}, message);
     }).catch(error => {
         const message = `La liste des communes n'a pas pu être récupérée. Réessayez dans quelques instants.`
         //res.status(500).json({ message, data: error })
@@ -55,18 +52,29 @@ export const getAllCommune = async (req: Request, res: Response) => {
     })
 };
 
-export const getAllCommune2 = async (req: Request, res: Response) => {
+
+export const getAllCommunes = async (req: Request, res: Response) => {
     const { page, limit, searchTerm, startIndex, searchQueries } = paginationAndRechercheInit(req, Commune);
-    var requu = myDataSource.getRepository(Commune)
-    .createQueryBuilder("c")
-    if(searchTerm && searchTerm != ""){
-        requu = requu.andWhere("(c.code LIKE :keyword OR c.libelle LIKE :keyword)", { keyword: `%${searchTerm}%` })
-    }
-    await requu
-    .getMany()
-    .then((data) => {
-        const message = 'La liste des communes a bien été récupérée.';
-        return success(res,200,{data}, message);
+    let reque = await myDataSource.getRepository(Commune)
+        .createQueryBuilder("commune")
+        .leftJoinAndSelect('commune.departement','departement')
+        .leftJoinAndSelect('commune.arrondissements','arrondissement')
+        .leftJoinAndSelect('commune.userCreation','user')
+        // .where(searchQueries.join(' OR '), { keyword: `%${searchTerm}%` })
+        .where("commune.deletedAt IS NULL")
+        if (searchQueries.length > 0) {
+            reque.andWhere(new Brackets(qb => {
+                qb.where(searchQueries.join(' OR '), { keyword: `%${searchTerm}%` })
+            }));
+        }
+        reque.orderBy(`commune.id`, 'ASC')
+        .skip(startIndex)
+        .take(limit)
+        .getManyAndCount()
+    .then(([data, totalElements]) => {
+        const message = 'La liste des communes a bien été récupérée.'
+        const totalPages = Math.ceil(totalElements / limit);
+        return success(res,200,{data, totalPages, totalElements, limit}, message);
     }).catch(error => {
         const message = `La liste des communes n'a pas pu être récupérée. Réessayez dans quelques instants.`
         //res.status(500).json({ message, data: error })
@@ -79,11 +87,14 @@ export const getCommune = async (req: Request, res: Response) => {
         where: {
             id: parseInt(req.params.id),
         },
-    //     relations: {
-    //         departement:true,
-    //         arrondissements:true
+        relations: {
+            departement:true,
+            arrondissements:
+            {
+            quartiers:true,      
+    },
 
-    // },
+    },
     })
     .then(commune => {
         if(commune === null) {
@@ -127,15 +138,15 @@ export const updateCommune = async (req: Request, res: Response) => {
         where: {
             id: parseInt(req.params.id),
         },
-    //     relations: {
-    //         departement:true,
-    //         arrondissements:true
+        relations: {
+            departement:true,
+            arrondissements:true
 
-    //  },
+     },
     }
     )
     if (!commune) {
-        return generateServerErrorCode(res,400,"L'id n'existe pas",'Cette commune existe déjà')
+        return generateServerErrorCode(res,400,"L'id n'existe pas",'Cette commune  existe déjà')
     }
     myDataSource.getRepository(Commune).merge(commune,req.body);
     const errors = await validate(commune);
@@ -148,10 +159,10 @@ export const updateCommune = async (req: Request, res: Response) => {
         return success(res,200,commune,message);
     }).catch(error => {
         if(error instanceof ValidationError) {
-            return generateServerErrorCode(res,400,error,'Cette communeexiste déjà')
+            return generateServerErrorCode(res,400,error,'Cette commune existe déjà')
         }
         if(error.code == "ER_DUP_ENTRY") {
-            return generateServerErrorCode(res,400,error,'Cette communeexiste déjà')
+            return generateServerErrorCode(res,400,error,'Cette commune existe déjà')
         }
         const message = `La commune n'a pas pu être ajouté. Réessayez dans quelques instants.`
         return generateServerErrorCode(res,500,error,message)
@@ -166,10 +177,10 @@ export const deleteCommune = async (req: Request, res: Response) => {
         where: {
             id: parseInt(req.params.id)
         },
-//         relations:{
-//             departement:true,
-//             arrondissements:true
-//    }
+        relations:{
+            departement:true,
+            arrondissements:true
+   }
         })
     .then(commune => {        
         if(commune === null) {
@@ -179,7 +190,7 @@ export const deleteCommune = async (req: Request, res: Response) => {
 
         if(resultat){
             const message = `Cette commune est lié à d'autres enregistrements. Vous ne pouvez pas le supprimer.`
-            return generateServerErrorCode(res,400,"Cette communeest lié à d'autres enregistrements. Vous ne pouvez pas le supprimer.",message);
+            return generateServerErrorCode(res,400,"Cette commune est lié à d'autres enregistrements. Vous ne pouvez pas le supprimer.",message);
         }else{
             myDataSource.getRepository(Commune).softRemove(commune)
             .then(_ => {

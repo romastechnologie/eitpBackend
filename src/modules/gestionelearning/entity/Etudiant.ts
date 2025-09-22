@@ -6,6 +6,7 @@ import { Note } from "./Note";
 import { Piece } from "./Piece";
 import { Parent } from "./Parent";
 import { ParentEtudiant } from "./ParentEtudiant";
+import { Quartier } from "../../gestiondeszones/entity/Quartier";
 
 
 @Entity()
@@ -52,7 +53,13 @@ export class Etudiant {
     @Column({ nullable: false })
     jambeGauche: string
 
-    @Column({ unique: true, nullable: false })
+     @Column({ nullable: false })
+    infosComplementaire: string
+
+     @Column({ nullable: false })
+    typeEcole: string
+
+    @Column({ nullable: false })
     @IsNotEmpty({ message: "Le sexe est obligatoire" })
     sexe: string
 
@@ -61,11 +68,11 @@ export class Etudiant {
     email: string
 
 
-    @Column({ unique: true, nullable: false })
+    @Column({ nullable: false })
     @IsNotEmpty({ message: "La date de naissance est obligatoire" })
     dateNaissance: Date
 
-    @Column({ unique: true, nullable: false })
+    @Column({nullable: false })
     @IsNotEmpty({ message: "L'école est obligatoire" })
     ecoleProvenance: string
 
@@ -80,6 +87,9 @@ export class Etudiant {
 
     @OneToMany(() => ParentEtudiant, (parentetudiant) => parentetudiant.etudiant)
     parentetudiants: ParentEtudiant[]
+
+     @ManyToOne(() => Quartier, quartier => quartier.etudiants)
+    quartier: Quartier;
 
     @CreateDateColumn()
     createdAt: Timestamp

@@ -84,9 +84,9 @@ export class User {
   @Column({ nullable: true })
   codeMarchand: string;
 
-  @ManyToMany(() => Commune, (commune) => commune.users)
-  @JoinTable({ name: "zone_couverture" })
-  communes: Commune[];
+  // @ManyToMany(() => Commune, (commune) => commune.users)
+  // @JoinTable({ name: "zone_couverture" })
+  // communes: Commune[];
 
   @ManyToOne(() => User, (user) => user.users)
   user: User;
