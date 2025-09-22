@@ -11,6 +11,7 @@ import { FiliereNiveauMatiere } from "../../gestionelearning/entity/FiliereNivea
 import { paginationAndRechercheInit } from "../../../configs/paginationAndRechercheInit";
 import { Filiere } from "../../gestionelearning/entity/Filiere";
 import { Niveau } from "../../gestionelearning/entity/Niveau";
+import { TypeEmploiDuTemps } from "../entity/TypeEmploiDuTemps";
 
 export const createEmploiDuTemps = async (req: Request, res: Response) => {
     const { dateDebut, dateFin, typeEmploi, filiereId, niveauId, cours: coursData } = req.body;
@@ -304,7 +305,10 @@ export const getEmploiDuTemps = async (req: Request, res: Response) => {
             'cours.filiereNiveauMatiere.niveau',
             'cours.filiereNiveauMatiere.matiere',
             'cours.professeur',
-            'cours.classe'
+            'cours.classe',
+                'filiere',  
+                'niveau',
+                'typeEmploi'
         ],
     })
     .then(emploiDuTemps => {
@@ -335,7 +339,10 @@ export const updateEmploiDuTemps = async (req: Request, res: Response) => {
                 'cours.filiereNiveauMatiere.niveau',
                 'cours.filiereNiveauMatiere.matiere',
                 'cours.professeur',
-                'cours.classe'
+                'cours.classe',
+                'filiere',  
+                'niveau',
+                'typeEmploi'
             ]
         });
 
@@ -343,7 +350,14 @@ export const updateEmploiDuTemps = async (req: Request, res: Response) => {
             return generateServerErrorCode(res, 400, "L'id n'existe pas", "Cet emploi du temps n'existe pas");
         }
 
-        const { coursToCreate, coursToUpdate, coursToDelete, filiereId, niveauId, ...rest } = req.body;
+        const { coursToCreate, coursToUpdate, coursToDelete, filiereId, niveauId, typeEmploi, ...rest } = req.body;
+
+        console.log('=== BACKEND RECEIVED ===');
+        console.log('filiereId:', filiereId);
+        console.log('niveauId:', niveauId);
+        console.log('typeEmploi:', typeEmploi);
+        console.log('rest:', rest);
+        console.log('Full body:', req.body);
 
         if (filiereId) {
             const filiere = await myDataSource.getRepository(Filiere).findOneBy({ id: filiereId });
@@ -356,6 +370,18 @@ export const updateEmploiDuTemps = async (req: Request, res: Response) => {
             if (!niveau) return generateServerErrorCode(res, 400, null, "Niveau invalide.");
             emploiDuTemps.niveau = niveau;
         }
+
+        if (req.body.typeEmploi) {
+        // Si typeEmploi est un objet avec une propriété value
+        const typeEmploiId = typeof req.body.typeEmploi === 'object' 
+            ? req.body.typeEmploi.value || req.body.typeEmploi.id
+            : req.body.typeEmploi;
+            
+        const typeEmploi = await myDataSource.getRepository(TypeEmploiDuTemps)
+            .findOneBy({ id: typeEmploiId });
+        if (!typeEmploi) return generateServerErrorCode(res, 400, null, "Type d'emploi invalide.");
+        emploiDuTemps.typeEmploi = typeEmploi;
+    }
 
         emploiDuTempsRepo.merge(emploiDuTemps, rest);
 
@@ -434,7 +460,10 @@ export const updateEmploiDuTemps = async (req: Request, res: Response) => {
                 'cours.filiereNiveauMatiere.niveau',
                 'cours.filiereNiveauMatiere.matiere',
                 'cours.professeur',
-                'cours.classe'
+                'cours.classe',
+                 'filiere',  
+                'niveau',
+                'typeEmploi'
             ]
         });
 
