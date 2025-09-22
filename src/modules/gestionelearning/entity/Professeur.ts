@@ -32,6 +32,10 @@ export class Professeur {
     @Column({ nullable: true })
     dateNaissance: Date
 
+    @Column({ nullable: true })
+    nationalite: Date
+
+
     @Column({ nullable: false })
     @IsNotEmpty({ message: "Le numéro 1 est  obligatoire" })
     telProfesseur1: string

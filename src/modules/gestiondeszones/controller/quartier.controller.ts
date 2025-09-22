@@ -165,6 +165,30 @@ export const getQuartierByArrondissement = async (req: Request, res: Response) =
     })
 };
 
+export const getQuartierByCommune = async (req: Request, res: Response) => {
+  try {
+    const quartiers = await myDataSource
+      .getRepository(Quartier)
+      .createQueryBuilder("q")
+      .innerJoinAndSelect("q.arrondissement", "a")
+      .innerJoinAndSelect("a.commune", "c")
+      .where("c.id = :id", { id: req.params.id })
+      .getMany();
+
+    if (!quartiers || quartiers.length === 0) {
+      const message = `Aucun quartier trouvé pour la commune sélectionnée.`;
+      return generateServerErrorCode(res, 400, "Aucun quartier trouvé", message);
+    }
+
+    const message = `La récupération des quartiers a bien été exécutée.`;
+    return success(res, 200, quartiers, message);
+  } catch (error) {
+    const message = `Les quartiers n'ont pas pu être récupérés. Réessayez dans quelques instants.`;
+    return generateServerErrorCode(res, 500, error, message);
+  }
+};
+
+
 export const updateQuartier = async (req: Request, res: Response) => {
     const quartier = await myDataSource.getRepository(Quartier).findOne(
        { 

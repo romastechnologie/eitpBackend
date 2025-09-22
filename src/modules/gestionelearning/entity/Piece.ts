@@ -20,8 +20,8 @@ export class Piece {
     // @IsNotEmpty({ message: "Le nom est obligatoire" })
     // nomFichier: string
 
-    @Column({ nullable: false })
-    @IsNotEmpty({ message: "Le lien est obligatoire" })
+    @Column({ nullable: true })
+    //@IsNotEmpty({ message: "Le lien est obligatoire" })
     urlImage: string
 
     @ManyToOne(() => TypePiece, (typePiece) => typePiece.pieces)

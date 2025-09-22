@@ -37,8 +37,10 @@ export const getAllCommune = async (req: Request, res: Response) => {
     await myDataSource.getRepository(Commune).find({
         relations:{
             departement:true,
-            arrondissements:true  
-        }
+            arrondissements: {
+            quartiers:true,      
+    },
+    },
     })
     .then((retour) => {
         const message = 'La liste des communes a bien été récupérée.';
@@ -56,7 +58,6 @@ export const getAllCommunes = async (req: Request, res: Response) => {
     let reque = await myDataSource.getRepository(Commune)
         .createQueryBuilder("commune")
         .leftJoinAndSelect('commune.departement','departement')
-        .leftJoinAndSelect('commune.circonscription','circonscription')
         .leftJoinAndSelect('commune.arrondissements','arrondissement')
         .leftJoinAndSelect('commune.userCreation','user')
         // .where(searchQueries.join(' OR '), { keyword: `%${searchTerm}%` })
@@ -88,7 +89,10 @@ export const getCommune = async (req: Request, res: Response) => {
         },
         relations: {
             departement:true,
-            arrondissements:true
+            arrondissements:
+            {
+            quartiers:true,      
+    },
 
     },
     })

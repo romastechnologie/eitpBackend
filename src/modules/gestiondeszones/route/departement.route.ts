@@ -3,10 +3,19 @@ import { createDepartement, deleteDepartement, getAllDepartement, getAllDepartem
 import { checkPermission } from '../../../middlewares/auth.middleware';
 
 export  const departementsRoutes =  (router: express.Router) => {
-  router.post('/api/departements', checkPermission('AddDepartement'), createDepartement);
-  router.get('/api/departements', checkPermission('ListDepartement'), getAllDepartement);
-  router.get('/api/all/departements', checkPermission('ListAllDepartements'), getAllDepartements);
-  router.get('/api/departements/:id', checkPermission('ViewDepartement'), getDepartement);
-  router.delete('/api/departements/:id', checkPermission('DeleteDepartement'), deleteDepartement);
-  router.put('/api/departements/:id', checkPermission('EditDepartement'), updateDepartement);
+  // router.post('/api/departements', checkPermission('AddDepartement'), createDepartement);
+  // router.get('/api/departements', checkPermission('ListDepartement'), getAllDepartement);
+  // router.get('/api/all/departements', checkPermission('ListAllDepartement'), getAllDepartements);
+  // router.get('/api/departements/:id', checkPermission('ViewDepartement'), getDepartement);
+  // router.delete('/api/departements/:id', checkPermission('DeleteDepartement'), deleteDepartement);
+  // router.put('/api/departements/:id', checkPermission('EditDepartement'), updateDepartement);
+
+
+router.post('/api/departements', createDepartement);
+  router.get('/api/departements', getAllDepartement);
+  router.get('/api/all/departements',  getAllDepartements);
+  router.get('/api/departements/:id', getDepartement);
+  router.delete('/api/departements/:id',  deleteDepartement);
+  router.put('/api/departements/:id', updateDepartement);
+
 };
