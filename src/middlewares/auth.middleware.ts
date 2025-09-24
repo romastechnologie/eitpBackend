@@ -22,6 +22,7 @@ export const isAuthenticated = async (req, res, next) => {
 
 
 export const isAuthenticatedOne = async (req, res, next) => {
+  console.log("monbody", req.body);
   const authorizationHeader = req.headers.authorization
 
   if(!authorizationHeader) {

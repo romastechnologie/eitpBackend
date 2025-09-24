@@ -15,6 +15,7 @@ export  const inscriptionsRoutes =  (router: express.Router) => {
   router.post('/api/inscriptions', createInscription);
   router.get('/api/inscriptions', getAllInscription);
   router.get('/api/all/inscriptions', getAllInscriptions);
+  // router.get('/api/inscriptions', getAllInscription);
   router.get('/api/inscriptions/:id', getInscription);
   router.delete('/api/inscriptions/:id',deleteInscription);
   router.put('/api/inscriptions/:id',updateInscription);

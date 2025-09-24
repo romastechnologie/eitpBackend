@@ -16,48 +16,15 @@ export class Etudiant {
 
     @Column({ unique: true, nullable: false })
     @IsNotEmpty({ message: "Le numéro matricule est obligatoire" })
-    matricule: string
+    numeroEducMaster: string
 
-    @Column({ unique: true, nullable: false })
+    @Column({ nullable: false })
     @IsNotEmpty({ message: "Le nom est obligatoire" })
     nom: string
 
-    @Column({ unique: true, nullable: false })
+    @Column({ nullable: false })
     @IsNotEmpty({ message: "Le prénom est obligatoire" })
     prenom: string
-
-    @Column({ nullable: false })
-    hauteur: string;
-
-    @Column({ nullable: false })
-    mainGauche: string
-
-    @Column({ nullable: false })
-    mainDroite: string
-
-    @Column({ nullable: false })
-    visionDroite: string
-
-    @Column({ nullable: false })
-    visionGauche: string
-
-    @Column({ nullable: false })
-    typeDeSang: string
-
-    @Column({ nullable: false })
-    poids: string
-
-    @Column({ nullable: false })
-    jambeDroite: string
-
-    @Column({ nullable: false })
-    jambeGauche: string
-
-     @Column({ nullable: false })
-    infosComplementaire: string
-
-     @Column({ nullable: false })
-    typeEcole: string
 
     @Column({ nullable: false })
     @IsNotEmpty({ message: "Le sexe est obligatoire" })
@@ -67,14 +34,49 @@ export class Etudiant {
     @IsNotEmpty({ message: "L' email est obligatoire" })
     email: string
 
-
     @Column({ nullable: false })
     @IsNotEmpty({ message: "La date de naissance est obligatoire" })
     dateNaissance: Date
 
-    @Column({nullable: false })
+    @Column({ nullable: false })
     @IsNotEmpty({ message: "L'école est obligatoire" })
     ecoleProvenance: string
+
+
+    // Nouveaux champs pour la santé
+    @Column({ nullable: true })
+    taille: number; // Taille en cm
+
+    @Column({ nullable: true })
+    poids: number; // Poids en kg
+
+    @Column({ nullable: true })
+    groupeSanguin: string;
+
+    @Column({ nullable: true })
+    visionGauche: string;
+
+    @Column({ nullable: true })
+    visionDroite: string;
+
+    @Column({ nullable: true })
+    audienceGauche: string;
+
+    @Column({ nullable: true })
+    audienceDroite: string;
+
+    @Column({ nullable: true })
+    mainGauche: string;
+
+    @Column({ nullable: true })
+    mainDroite: string;
+
+    @Column({ nullable: true })
+    jambeGauche: string;
+
+    @Column({ nullable: true })
+    jambeDroite: string;
+
 
     @OneToMany(() => Inscription, inscription => inscription.etudiant)
     inscriptions: Inscription[];
@@ -88,7 +90,7 @@ export class Etudiant {
     @OneToMany(() => ParentEtudiant, (parentetudiant) => parentetudiant.etudiant)
     parentetudiants: ParentEtudiant[]
 
-     @ManyToOne(() => Quartier, quartier => quartier.etudiants)
+    @ManyToOne(() => Quartier, quartier => quartier.etudiants)
     quartier: Quartier;
 
     @CreateDateColumn()

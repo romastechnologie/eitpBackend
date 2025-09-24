@@ -19,7 +19,7 @@ import { Piece } from "../entity/Piece";
 
 
 
-export const createInscription = async (req: Request, res: Response) => {
+export const createInscription1 = async (req: Request, res: Response) => {
   console.log("Corps reçu :", req.body);
 
   // Extraction des données du corps de la requête
@@ -161,46 +161,326 @@ export const createInscription = async (req: Request, res: Response) => {
       error.message || "L'inscription n'a pas pu être créée. Réessayez plus tard."
     );
   }
+}; 
+
+
+export const createInscription = async (req: Request, res: Response) => {
+  console.log("Corps reçu :", req.body.anneeId);
+
+  // Extraction des données du corps de la requête
+  const {
+    nom,
+    prenom,
+    sexe,
+    email,
+    dateNaissance,
+    ecoleProvenance,
+    numeroEducMaster,
+    niveau,
+    filiere,
+    parent,
+    pieces,
+    anneeId,
+    taille,
+    poids,
+    groupeSanguin,
+    visionGauche,
+    visionDroite,
+    audienceGauche,
+    audienceDroite,
+    mainGauche,
+    mainDroite,
+    jambeGauche,
+    jambeDroite,
+  } = req.body;
+
+  try {
+    const result = await myDataSource.manager.transaction(async (manager) => {
+      // Étape 1 : Créer ou récupérer l'étudiant
+      let etudiant = null;
+      if(req.body.email){
+        etudiant = await manager.findOne(Etudiant, {
+          where: { email }, // Vérifier si l'étudiant existe déjà via l'email
+        });
+        console.log('etudiant existant', etudiant);
+      }
+
+      if (!etudiant) {
+        // Créer un nouvel étudiant si aucun n'existe
+        etudiant = manager.create(Etudiant, {
+          numeroEducMaster: numeroEducMaster || `MAT-${Date.now()}`, // Générer un matricule si non fourni
+          nom,
+          prenom,
+          sexe,
+          email,
+          dateNaissance: new Date(dateNaissance),
+          ecoleProvenance,
+          taille: taille ? parseInt(taille) : null, // Convertir en nombre si fourni
+          poids: poids ? parseInt(poids) : null, // Convertir en nombre si fourni
+          groupeSanguin: groupeSanguin || null,
+          visionGauche: visionGauche || null,
+          visionDroite: visionDroite || null,
+          audienceGauche: audienceGauche || null,
+          audienceDroite: audienceDroite || null,
+          mainGauche: mainGauche || null,
+          mainDroite: mainDroite || null,
+          jambeGauche: jambeGauche || null,
+          jambeDroite: jambeDroite || null,
+        });
+
+        const etudiantErrors = await validate(etudiant);
+        if (etudiantErrors.length > 0) {
+          throw new Error(validateMessage(etudiantErrors));
+        }
+
+        etudiant = await manager.save(Etudiant, etudiant);
+        console.log("Étudiant enregistré :", etudiant);
+      }
+
+      // Étape 2 : Vérifier l'année académique
+      const anneeAcademique = await manager.findOne(AnneeAcademique, {
+        where: { id: anneeId },
+      });
+      if (!anneeAcademique) {
+        throw new Error("Année académique introuvable");
+      }
+
+      // Étape 3 : Vérifier la filière
+      const filiereEntity = await manager.findOne(Filiere, {
+        where: { id: filiere },
+      });
+      if (!filiereEntity) {
+        throw new Error("Filière introuvable");
+      }
+
+      // Étape 4 : Vérifier le niveau
+      const niveauEntity = await manager.findOne(Niveau, {
+        where: { id: niveau },
+      });
+      if (!niveauEntity) {
+        throw new Error("Niveau introuvable");
+      }
+
+      // Étape 5 : Créer l'inscription
+      const inscription = manager.create(Inscription, {
+        dateInscription: new Date(),
+        etudiant,
+        annee: anneeAcademique,
+        filiere: filiereEntity,
+        niveau: niveauEntity,
+      });
+
+      const inscriptionErrors = await validate(inscription);
+      if (inscriptionErrors.length > 0) {
+        throw new Error(validateMessage(inscriptionErrors));
+      }
+
+      const savedInscription = await manager.save(Inscription, inscription);
+      console.log("Inscription enregistrée :", savedInscription);
+
+      // Étape 6 : Créer l'association ParentEtudiant
+      if (parent) {
+        const parentEtudiant = manager.create(ParentEtudiant, {
+          parent: { id: parent },
+          etudiant,
+        });
+
+        const parentEtudiantErrors = await validate(parentEtudiant);
+        if (parentEtudiantErrors.length > 0) {
+          throw new Error(validateMessage(parentEtudiantErrors));
+        }
+
+        await manager.save(ParentEtudiant, parentEtudiant);
+        console.log("Association ParentEtudiant enregistrée");
+      }
+
+      // Étape 7 : Gérer les pièces
+      if (pieces && Array.isArray(pieces)) {
+        for (const pieceData of pieces) {
+          const piece = manager.create(Piece, {
+            typePiece: { id: pieceData.typePiece },
+            numeroPiece: pieceData.numeroPiece,
+            urlImage: pieceData.urlImage,
+            etudiant,
+          });
+
+          const pieceErrors = await validate(piece);
+          if (pieceErrors.length > 0) {
+            throw new Error(validateMessage(pieceErrors));
+          }
+
+          await manager.save(Piece, piece);
+        }
+        console.log("Pièces enregistrées :", pieces.length);
+      }
+
+      return { inscription: savedInscription, etudiant };
+    });
+
+    const message = `L'inscription a été créée avec succès pour l'étudiant ${result.etudiant.nom} ${result.etudiant.prenom}.`;
+    return success(res, 201, result.inscription, message);
+  } catch (error: any) {
+    console.error("Erreur lors de la création de l'inscription :", error);
+
+    if (error.code === "ER_DUP_ENTRY") {
+      return generateServerErrorCode(res, 400, error, "Un étudiant avec cet email ou matricule existe déjà.");
+    }
+
+    return generateServerErrorCode(
+      res,
+      500,
+      error,
+      error.message || "L'inscription n'a pas pu être créée. Réessayez plus tard."
+    );
+  }
 };
 
 
 
-// export const createEtudiantEtParent = async (
-//   etudiantData: Partial<Etudiant>,
-//   parentData: Partial<Parent>
-// ) => {
-//   const queryRunner = myDataSource.createQueryRunner();
-//   await queryRunner.connect();
-//   await queryRunner.startTransaction();
 
-//   try {
-//     // 1. Création du parent
-//     const parent = queryRunner.manager.create(Parent, parentData);
-//     await queryRunner.manager.save(parent);
+/*export const createInscription = async (req: Request, res: Response) => {
+  console.log("Corps reçu :", req.body);
 
-//     // 2. Création de l’étudiant
-//     const etudiant = queryRunner.manager.create(Etudiant, etudiantData);
-//     await queryRunner.manager.save(etudiant);
+  const {
+    etudiantId, // <--- nouveau champ optionnel
+    nom,
+    prenom,
+    sexe,
+    email,
+    dateNaissance,
+    ecoleProvenance,
+    numeroEducMaster,
+    niveau,
+    filiere,
+    parent,
+    pieces,
+    anneeId,
+  } = req.body;
 
-//     // 3. Création de la relation ParentEtudiant
-//     const parentEtudiant = queryRunner.manager.create(ParentEtudiant, {
-//       etudiant,
-//       parent,
-//     });
-//     await queryRunner.manager.save(parentEtudiant);
+  try {
+    const result = await myDataSource.manager.transaction(async (manager) => {
+      let etudiant: Etudiant | null = null;
 
-//     // 4. Valider la transaction
-//     await queryRunner.commitTransaction();
+      // === Cas 1 : Utiliser un étudiant existant ===
+      if (etudiantId) {
+        etudiant = await manager.findOne(Etudiant, { where: { id: etudiantId } });
+        if (!etudiant) {
+          throw new Error("Étudiant introuvable avec l'ID fourni");
+        }
+        console.log("Étudiant existant trouvé :", etudiant.id);
+      } 
+      // === Cas 2 : Créer un nouvel étudiant ===
+      else {
+        // Vérification minimale des champs obligatoires
+        if (!nom || !prenom || !sexe || !email || !dateNaissance || !ecoleProvenance) {
+          throw new Error("Champs obligatoires manquants pour la création d'un nouvel étudiant");
+        }
 
-//     return { etudiant, parent, parentEtudiant };
-//   } catch (error) {
-//     await queryRunner.rollbackTransaction();
-//     throw error;
-//   } finally {
-//     await queryRunner.release();
-//   }
-// };
+        etudiant = manager.create(Etudiant, {
+          matricule: numeroEducMaster || `MAT-${Date.now()}`,
+          nom,
+          prenom,
+          sexe,
+          email,
+          dateNaissance: new Date(dateNaissance),
+          ecoleProvenance,
+        });
 
+        const etudiantErrors = await validate(etudiant);
+        if (etudiantErrors.length > 0) {
+          throw new Error(validateMessage(etudiantErrors));
+        }
+
+        etudiant = await manager.save(Etudiant, etudiant);
+        console.log("Nouvel étudiant enregistré :", etudiant.id);
+      }
+
+      // === Vérifier l'année académique ===
+      const anneeAcademique = await manager.findOne(AnneeAcademique, { where: { id: anneeId } });
+      if (!anneeAcademique) throw new Error("Année académique introuvable");
+
+      // === Vérifier la filière ===
+      const filiereEntity = await manager.findOne(Filiere, { where: { id: filiere } });
+      if (!filiereEntity) throw new Error("Filière introuvable");
+
+      // === Vérifier le niveau ===
+      const niveauEntity = await manager.findOne(Niveau, { where: { id: niveau } });
+      if (!niveauEntity) throw new Error("Niveau introuvable");
+
+      // === Créer l’inscription ===
+      const inscription = manager.create(Inscription, {
+        dateInscription: new Date(),
+        etudiant,
+        annee: anneeAcademique,
+        filiere: filiereEntity,
+        niveau: niveauEntity,
+      });
+
+      const inscriptionErrors = await validate(inscription);
+      if (inscriptionErrors.length > 0) {
+        throw new Error(validateMessage(inscriptionErrors));
+      }
+
+      const savedInscription = await manager.save(Inscription, inscription);
+      console.log("Inscription enregistrée :", savedInscription.id);
+
+      // === Associer un parent ===
+      if (parent) {
+        const parentEtudiant = manager.create(ParentEtudiant, {
+          parent: { id: parent },
+          etudiant,
+        });
+
+        const parentEtudiantErrors = await validate(parentEtudiant);
+        if (parentEtudiantErrors.length > 0) {
+          throw new Error(validateMessage(parentEtudiantErrors));
+        }
+
+        await manager.save(ParentEtudiant, parentEtudiant);
+        console.log("Association ParentEtudiant enregistrée");
+      }
+
+      // === Ajouter les pièces ===
+      if (pieces && Array.isArray(pieces)) {
+        for (const pieceData of pieces) {
+          const piece = manager.create(Piece, {
+            typePiece: { id: pieceData.typePiece },
+            numeroPiece: pieceData.numeroPiece,
+            urlImage: pieceData.urlImage,
+            etudiant,
+          });
+
+          const pieceErrors = await validate(piece);
+          if (pieceErrors.length > 0) {
+            throw new Error(validateMessage(pieceErrors));
+          }
+
+          await manager.save(Piece, piece);
+        }
+        console.log("Pièces enregistrées :", pieces.length);
+      }
+
+      return { inscription: savedInscription, etudiant };
+    });
+
+    const message = `Inscription créée avec succès pour l'étudiant ${result.etudiant.nom} ${result.etudiant.prenom}.`;
+    return success(res, 201, result.inscription, message);
+
+  } catch (error: any) {
+    console.error("Erreur lors de la création de l'inscription :", error);
+
+    if (error.code === "ER_DUP_ENTRY") {
+      return generateServerErrorCode(res, 400, error, "Un étudiant avec cet email ou matricule existe déjà.");
+    }
+
+    return generateServerErrorCode(
+      res,
+      500,
+      error,
+      error.message || "L'inscription n'a pas pu être créée. Réessayez plus tard."
+    );
+  }
+};*/
 
 
 
@@ -211,8 +491,10 @@ export const getAllInscription = async (req: Request, res: Response) => {
   try {
     let reque = myDataSource.getRepository(Inscription)
       .createQueryBuilder("inscription")
-      .leftJoinAndSelect("inscription.userInscriptions", "userInscription")   
-      .leftJoinAndSelect("userInscription.user", "user")         
+      .leftJoinAndSelect("inscription.etudiant", "etudiant")   
+      .leftJoinAndSelect("inscription.annee", "anneeAcademique")   
+      .leftJoinAndSelect("inscription.filiere", "filiere")   
+      .leftJoinAndSelect("inscription.niveau", "niveau")         
       .where("inscription.deletedAt IS NULL");
     if (searchQueries.length > 0) {
       reque.andWhere(
@@ -268,14 +550,14 @@ export const getInscription = async (req: Request, res: Response) => {
     })
     .then(inscription => {
         if(inscription === null) {
-          const message = `Le inscription demandé n'existe pas. Réessayez avec un autre identifiant.`
+          const message = `L'inscription demandé n'existe pas. Réessayez avec un autre identifiant.`
           return generateServerErrorCode(res,400,"L'id n'existe pas",message)
         }
-        const message = `Le inscription de méda a bien été trouvé.`
+        const message = `L'inscription de méda a bien été trouvé.`
         return success(res,200, inscription,message);
     })
     .catch(error => {
-        const message = `Le inscription n'a pas pu être récupéré. Réessayez dans quelques instants.`
+        const message = `L'inscription n'a pas pu être récupéré. Réessayez dans quelques instants.`
         return generateServerErrorCode(res,500,error,message)
     })
 };
@@ -302,7 +584,7 @@ export const updateInscription = async (req: Request, res: Response) => {
         return generateServerErrorCode(res,400,errors,message)
     }
     await myDataSource.getRepository(Inscription).save(inscription).then(inscription => {
-        const message = `Le inscription ${inscription.id} a bien été modifié.`
+        const message = `L'inscription ${inscription.id} a bien été modifié.`
         return success(res,200, inscription,message);
     }).catch(error => {
         if(error instanceof ValidationError) {
@@ -311,7 +593,7 @@ export const updateInscription = async (req: Request, res: Response) => {
         if(error.code == "ER_DUP_ENTRY") {
             return generateServerErrorCode(res,400,error,'Ce inscription de média existe déjà')
         }
-        const message = `Le inscription n'a pas pu être ajouté. Réessayez dans quelques instants.`
+        const message = `L'inscription n'a pas pu être ajouté. Réessayez dans quelques instants.`
         return generateServerErrorCode(res,500,error,message)
         // res.status(500).json({ message, data: error }) 
     })
@@ -327,7 +609,7 @@ export const deleteInscription = async (req: Request, res: Response) => {
         })
     .then(inscription => {        
         if(inscription === null) {
-          const message = `Le inscription demandé n'existe pas. Réessayez avec un autre identifiant.`
+          const message = `L'inscription demandé n'existe pas. Réessayez avec un autre identifiant.`
           return generateServerErrorCode(res,400,"L'id n'existe pas",message);
         }
 
@@ -337,12 +619,12 @@ export const deleteInscription = async (req: Request, res: Response) => {
         }else{
             myDataSource.getRepository(Inscription).softRemove(inscription)
             .then(_ => {
-                const message = `Le inscription avec l'identifiant n°${inscription.id} a bien été supprimé.`;
+                const message = `L'inscription avec l'identifiant n°${inscription.id} a bien été supprimé.`;
                 return success(res,200, inscription,message);
             })
         }
     }).catch(error => {
-        const message = `Le inscription n'a pas pu être supprimé. Réessayez dans quelques instants.`
+        const message = `L'inscription n'a pas pu être supprimé. Réessayez dans quelques instants.`
         return generateServerErrorCode(res,500,error,message)
     })
 }
