@@ -11,11 +11,11 @@ export class EmploiDuTemps {
     @PrimaryGeneratedColumn()
     id: number;
 
-    @Column({ nullable: false })
+    @Column({type:"date", nullable: false })
     @IsNotEmpty({ message: "La date de début est obligatoire" })
     dateDebut: Date;
 
-    @Column({ nullable: false })
+    @Column({ type:"date", nullable: false })
     @IsNotEmpty({ message: "La date de fin est obligatoire" })
     dateFin: Date;
 

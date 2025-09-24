@@ -146,35 +146,94 @@ export const createEmploiDuTemps = async (req: Request, res: Response) => {
     }
 };
 
+
 export const checkClasseAvailability = async (req: Request, res: Response) => {
     try {
-        const { classeId, jour, heureDebut, heureFin } = req.query;
+        const { 
+            classeId, 
+            jour, 
+            heureDebut, 
+            heureFin, 
+            dateDebut,
+            dateFin,
+            idemploiDuTemps, 
+            professeurId 
+        } = req.query;
 
-         console.log('Paramètres reçus:', { classeId, jour, heureDebut, heureFin });
+        console.log('Paramètres reçus:', { 
+            classeId, 
+            jour, 
+            professeurId, 
+            heureDebut, 
+            heureFin,
+            dateDebut,
+            dateFin,
+            idemploiDuTemps
+        });
         
+        // Validation des paramètres obligatoires
         if (!classeId || !jour || !heureDebut || !heureFin) {
-            console.log('Paramètres manquants');
-            return generateServerErrorCode(res, 400, null, "Paramètres manquants");
+            console.log('Paramètres obligatoires manquants');
+            return generateServerErrorCode(res, 400, null, "Paramètres obligatoires manquants");
         }
 
-         if (jour === 'undefined' || jour === undefined) {
+        // Validation du jour
+        if (jour === 'undefined' || jour === undefined) {
             console.log('Jour undefined détecté');
             return generateServerErrorCode(res, 400, null, "Jour invalide");
         }
 
-        // Vérification des paramètres
+        // Validation des IDs
         const classeIdNum = parseInt(classeId as string);
         if (isNaN(classeIdNum)) {
             return generateServerErrorCode(res, 400, null, "ID de classe invalide");
         }
 
-        // Vérifier s'il y a un cours existant dans cette classe pour ce créneau (seulement les cours physiques)
-        console.log('Check disponibilité - classe:', classeIdNum, 'jour:', jour, 'heures:', heureDebut, '-', heureFin);
-        
-        const existingCours = await myDataSource.getRepository(Cours)
+        const professeurIdNum = professeurId ? parseInt(professeurId as string) : null;
+        if (professeurId && isNaN(professeurIdNum as number)) {
+            return generateServerErrorCode(res, 400, null, "ID de professeur invalide");
+        }
+
+        // Validation et parsing des dates si fournies
+        let dateDebutParsed: Date | null = null;
+        let dateFinParsed: Date | null = null;
+
+        if (dateDebut) {
+            dateDebutParsed = new Date(dateDebut as string);
+            if (isNaN(dateDebutParsed.getTime())) {
+                return generateServerErrorCode(res, 400, null, "Date de début invalide");
+            }
+        }
+
+        if (dateFin) {
+            dateFinParsed = new Date(dateFin as string);
+            if (isNaN(dateFinParsed.getTime())) {
+                return generateServerErrorCode(res, 400, null, "Date de fin invalide");
+            }
+        }
+
+        console.log('Vérification disponibilité:', {
+            classe: classeIdNum,
+            professeur: professeurIdNum,
+            jour: jour,
+            heures: `${heureDebut}-${heureFin}`,
+            periode: dateDebutParsed && dateFinParsed 
+                ? `${dateDebutParsed.toISOString().split('T')[0]} - ${dateFinParsed.toISOString().split('T')[0]}`
+                : 'Non spécifiée'
+        });
+
+        let classeOccupee = false;
+        let professeurOccupe = false;
+        let conflictingCours = null;
+
+        // ========================================
+        // 1. VÉRIFICATION DISPONIBILITÉ CLASSE
+        // ========================================
+        const classeQuery = myDataSource.getRepository(Cours)
             .createQueryBuilder('cours')
             .leftJoin('cours.classe', 'classe')
-            .leftJoin('cours.emploiDuTemps', 'emploiDuTemps')
+            .leftJoin('cours.professeur', 'professeur')
+            .leftJoinAndSelect('cours.emploiDuTemps', 'emploiDuTemps')
             .where('classe.id = :classeId', { classeId: classeIdNum })
             .andWhere('cours.jour = :jour', { jour: jour as string })
             .andWhere('cours.estEnLigne = false')  // Ignorer les cours en ligne
@@ -186,66 +245,293 @@ export const checkClasseAvailability = async (req: Request, res: Response) => {
                         { heureDebut: heureDebut as string, heureFin: heureFin as string }
                     );
                 })
-            )
-            .getOne();
+            );
 
-        console.log('Cours existant trouvé:', existingCours ? 'OUI' : 'NON');
+        // AJOUT: Vérification des chevauchements de dates
+        if (dateDebutParsed && dateFinParsed) {
+            classeQuery.andWhere(
+                new Brackets(qb => {
+                    qb.where(
+                        '(emploiDuTemps.dateDebut <= :dateFin AND emploiDuTemps.dateFin >= :dateDebut)',
+                        { 
+                            dateDebut: dateDebutParsed!.toISOString().split('T')[0], 
+                            dateFin: dateFinParsed!.toISOString().split('T')[0] 
+                        }
+                    );
+                })
+            );
+        }
 
-        const isAvailable = !existingCours;
+        // Exclure l'emploi du temps en cours de modification
+        if (idemploiDuTemps && idemploiDuTemps != undefined && idemploiDuTemps != "undefined") {
+            console.log("Exclusion emploi du temps ID:", idemploiDuTemps);
+            classeQuery.andWhere("emploiDuTemps.id != :idemploiDuTemps", { 
+                idemploiDuTemps: idemploiDuTemps 
+            });
+        }
 
-        return success(res, 200, { 
+        const existingClasseCours = await classeQuery.getOne();
+        
+        if (existingClasseCours) {
+            classeOccupee = true;
+            conflictingCours = {
+                ...existingClasseCours,
+                conflictType: 'classe',
+                conflictDetails: {
+                    classe: existingClasseCours.classe?.libelle || 'Inconnue',
+                    emploiDuTemps: {
+                        dateDebut: existingClasseCours.emploiDuTemps?.dateDebut,
+                        dateFin: existingClasseCours.emploiDuTemps?.dateFin,
+                        niveau: existingClasseCours.emploiDuTemps?.niveau?.libelle,
+                        filiere: existingClasseCours.emploiDuTemps?.filiere?.libelle
+                    }
+                }
+            };
+            console.log('Classe occupée - Conflit détecté:', {
+                cours: existingClasseCours.id,
+                classe: existingClasseCours.classe?.libelle,
+                emploiDuTemps: existingClasseCours.emploiDuTemps?.id
+            });
+        }
+
+        // ========================================
+        // 2. VÉRIFICATION DISPONIBILITÉ PROFESSEUR
+        // ========================================
+        if (professeurIdNum && !classeOccupee) {
+            const professeurQuery = myDataSource.getRepository(Cours)
+                .createQueryBuilder('cours')
+                .leftJoinAndSelect('cours.professeur', 'professeur') 
+                .leftJoin('cours.classe', 'classe')
+                .leftJoinAndSelect('cours.emploiDuTemps', 'emploiDuTemps')
+                .where('professeur.id = :professeurId', { professeurId: professeurIdNum })
+                .andWhere('cours.jour = :jour', { jour: jour as string })
+                .andWhere('emploiDuTemps.deletedAt IS NULL')
+                .andWhere(
+                    new Brackets(qb => {
+                        qb.where(
+                            '(cours.heureDebut < :heureFin AND cours.heureFin > :heureDebut)',
+                            { heureDebut: heureDebut as string, heureFin: heureFin as string }
+                        );
+                    })
+                );
+
+            // AJOUT: Vérification des chevauchements de dates pour le professeur
+            if (dateDebutParsed && dateFinParsed) {
+                professeurQuery.andWhere(
+                    new Brackets(qb => {
+                        qb.where(
+                            '(emploiDuTemps.dateDebut <= :dateFin AND emploiDuTemps.dateFin >= :dateDebut)',
+                            { 
+                                dateDebut: dateDebutParsed!.toISOString().split('T')[0], 
+                                dateFin: dateFinParsed!.toISOString().split('T')[0] 
+                            }
+                        );
+                    })
+                );
+            }
+
+            // Exclure l'emploi du temps en cours de modification
+            if (idemploiDuTemps && idemploiDuTemps != undefined && idemploiDuTemps != "undefined") {
+                professeurQuery.andWhere("emploiDuTemps.id != :idemploiDuTemps", { 
+                    idemploiDuTemps: idemploiDuTemps 
+                });
+            }
+
+            const existingProfesseurCours = await professeurQuery.getOne();
+            
+            if (existingProfesseurCours) {
+                professeurOccupe = true;
+                if (!conflictingCours) {
+                    conflictingCours = {
+                        ...existingProfesseurCours,
+                        conflictType: 'professeur',
+                        conflictDetails: {
+                            professeur: `${existingProfesseurCours.professeur?.nom} ${existingProfesseurCours.professeur?.prenom}`,
+                            classe: existingProfesseurCours.classe?.libelle,
+                            emploiDuTemps: {
+                                dateDebut: existingProfesseurCours.emploiDuTemps?.dateDebut,
+                                dateFin: existingProfesseurCours.emploiDuTemps?.dateFin,
+                                niveau: existingProfesseurCours.emploiDuTemps?.niveau?.libelle,
+                                filiere: existingProfesseurCours.emploiDuTemps?.filiere?.libelle
+                            }
+                        }
+                    };
+                }
+                console.log('Professeur occupé - Conflit détecté:', {
+                    cours: existingProfesseurCours.id,
+                    professeur: `${existingProfesseurCours.professeur?.nom} ${existingProfesseurCours.professeur?.prenom}`,
+                    classe: existingProfesseurCours.classe?.libelle,
+                    emploiDuTemps: existingProfesseurCours.emploiDuTemps?.id
+                });
+            }
+        }
+
+        // ========================================
+        // 3. RÉSULTAT FINAL
+        // ========================================
+        const hasConflict = classeOccupee || professeurOccupe;
+        const isAvailable = !hasConflict;
+
+        let message = "";
+        let messageDetails = [];
+
+        if (classeOccupee && professeurOccupe) {
+            message = "Classe et professeur occupés";
+            messageDetails.push("Classe déjà réservée", "Professeur déjà en cours");
+        } else if (classeOccupee) {
+            message = "Classe occupée";
+            messageDetails.push("Classe déjà réservée pour ce créneau");
+        } else if (professeurOccupe) {
+            message = "Professeur occupé";
+            messageDetails.push("Professeur déjà en cours à ce créneau");
+        } else {
+            message = "Créneaux disponibles";
+            messageDetails.push("Aucun conflit détecté");
+        }
+
+        const result = {
             available: isAvailable,
-            hasConflict: !isAvailable,
-            conflictingCours: existingCours || null 
-        }, isAvailable ? "Classe disponible" : "Classe occupée");
+            hasConflict: hasConflict,
+            classeOccupee: classeOccupee,
+            professeurOccupe: professeurOccupe,
+            conflictingCours: conflictingCours,
+            message: message,
+            details: messageDetails,
+            verificationPeriode: dateDebutParsed && dateFinParsed ? {
+                dateDebut: dateDebutParsed.toISOString().split('T')[0],
+                dateFin: dateFinParsed.toISOString().split('T')[0]
+            } : null
+        };
+
+        console.log('Résultat final de la vérification:', result);
+
+        return success(res, 200, result, message);
 
     } catch (error: any) {
         console.error('Erreur lors de la vérification de disponibilité:', error);
-        console.error('Erreur dans checkClasseAvailability:', error);
         return generateServerErrorCode(res, 500, error, "Erreur lors de la vérification");
     }
 };
 
+export const validateEmploiDuTempsData = (data: any): { isValid: boolean, errors: string[] } => {
+    const errors: string[] = [];
+
+    // 1. Vérifier les dates
+    const dateDebut = new Date(data.dateDebut);
+    const dateFin = new Date(data.dateFin);
+    const today = new Date();
+
+    if (dateDebut < today) {
+        errors.push("La date de début ne peut pas être dans le passé");
+    }
+
+    if (dateFin < dateDebut) {
+        errors.push("La date de fin doit être postérieure à la date de début");
+    }
+
+    // 2. Vérifier les matières en double
+    const matieres = new Set();
+    const matieresDoublons: string[] = [];
+
+    data.cours?.forEach((cours: any, index: number) => {
+        if (matieres.has(cours.filiereNiveauMatiereId)) {
+            matieresDoublons.push(`Cours ${index + 1}`);
+        }
+        matieres.add(cours.filiereNiveauMatiereId);
+    });
+
+    if (matieresDoublons.length > 0) {
+        errors.push(`Matières en double détectées dans: ${matieresDoublons.join(', ')}`);
+    }
+
+    // 3. Vérifier la cohérence horaire
+    data.cours?.forEach((cours: any, index: number) => {
+        if (cours.heureDebut >= cours.heureFin) {
+            errors.push(`Cours ${index + 1}: Heure de fin doit être postérieure à l'heure de début`);
+        }
+    });
+
+    return {
+        isValid: errors.length === 0,
+        errors: errors
+    };
+};
+
+
 // export const checkClasseAvailability = async (req: Request, res: Response) => {
-//   try {
-//     const { classeId, jour, heureDebut, heureFin } = req.query;
-    
-//     if (!classeId || !jour || !heureDebut || !heureFin) {
-//       return generateServerErrorCode(res, 400, null, "Paramètres manquants");
+//     try {
+//         const { classeId, jour, heureDebut, heureFin, idemploiDuTemps, professeurId } = req.query;
+
+//          console.log('Paramètres reçus:', { classeId, jour, professeurId,  heureDebut, heureFin });
+        
+//         if (!classeId || !jour || !heureDebut || !heureFin) {
+//             console.log('Paramètres manquants');
+//             return generateServerErrorCode(res, 400, null, "Paramètres manquants");
+//         }
+
+//          if (jour === 'undefined' || jour === undefined) {
+//             console.log('Jour undefined détecté');
+//             return generateServerErrorCode(res, 400, null, "Jour invalide");
+//         }
+
+//         // Vérification des paramètres
+//         const classeIdNum = parseInt(classeId as string);
+//         if (isNaN(classeIdNum)) {
+//             return generateServerErrorCode(res, 400, null, "ID de classe invalide");
+//         }
+
+//          const professeurIdNum = parseInt(professeurId as string);
+//         if (isNaN(professeurIdNum)) {
+//             return generateServerErrorCode(res, 400, null, "ID de professeur invalide");
+//         }
+
+//         // Vérifier s'il y a un cours existant dans cette classe pour ce créneau (seulement les cours physiques)
+//         console.log('Check disponibilité - classe:', classeIdNum, 'jour:', jour, 'heures:', heureDebut, '-', heureFin);
+//         console.log('Check disponibilité - professeur:', professeurIdNum, 'jour:', jour, 'heures:', heureDebut, '-', heureFin,professeurIdNum);
+        
+//         const existingCour =  myDataSource.getRepository(Cours)
+//             .createQueryBuilder('cours')
+//             .leftJoin('cours.classe', 'classe')
+//             .leftJoin ('cours.professeur', 'professeur')
+//             .leftJoinAndSelect('cours.emploiDuTemps', 'emploiDuTemps')
+//             .where('(classe.id = :classeId OR professeur.id = :professeurId )', { classeId: classeIdNum, professeurId: professeurIdNum }) 
+//             .andWhere('cours.jour = :jour', { jour: jour as string })
+//             .andWhere('cours.estEnLigne = false')  // Ignorer les cours en ligne
+//             .andWhere('emploiDuTemps.deletedAt IS NULL')
+//             .andWhere(
+//                 new Brackets(qb => {
+//                     qb.where(
+//                         '(cours.heureDebut < :heureFin AND cours.heureFin > :heureDebut)',
+//                         { heureDebut: heureDebut as string, heureFin: heureFin as string }
+//                     );
+//                 })
+//             );
+//             if (idemploiDuTemps && idemploiDuTemps != undefined && idemploiDuTemps != "undefined"){
+//                 console.log ("idemploiDuTemps", idemploiDuTemps)
+//                 existingCour.andWhere("emploiDuTemps.id != :idemploiDuTemps", {idemploiDuTemps:idemploiDuTemps})
+//             }
+//           const existingCours = await existingCour.getOne();
+//           console.log("existingCours", existingCours)
+
+//         console.log('Cours existant trouvé:', existingCours ? 'OUI' : 'NON');
+
+//         console.log('tttttttttttttttttttttt', professeurId)
+
+//         const isAvailable = !existingCours;
+
+//         return success(res, 200, { 
+//             available: isAvailable,
+//             hasConflict: !isAvailable,
+//             conflictingCours: existingCours || null 
+//         }, isAvailable ? "Classe disponible" : "Classe occupée");
+
+//     } catch (error: any) {
+//         console.error('Erreur lors de la vérification de disponibilité:', error);
+//         console.error('Erreur dans checkClasseAvailability:', error);
+//         return generateServerErrorCode(res, 500, error, "Erreur lors de la vérification");
 //     }
-
-//     // Vérifier s'il y a un cours existant dans cette classe pour ce créneau (seulement les cours physiques)
-//     const existingCours = await myDataSource.getRepository(Cours)
-//       .createQueryBuilder('cours')
-//       .leftJoin('cours.classe', 'classe')
-//       .leftJoin('cours.emploiDuTemps', 'emploiDuTemps')
-//       .where('classe.id = :classeId', { classeId: parseInt(classeId as string) })
-//       .andWhere('cours.jour = :jour', { jour: jour as string })
-//       .andWhere('cours.estEnLigne = false')  // Ajout : ignorer les cours en ligne
-//       .andWhere('emploiDuTemps.deletedAt IS NULL')
-//       .andWhere(
-//         new Brackets(qb => {
-//           qb.where(
-//             '(cours.heureDebut < :heureFin AND cours.heureFin > :heureDebut)',
-//             { heureDebut: heureDebut as string, heureFin: heureFin as string }
-//           );
-//         })
-//       )
-//       .getOne();
-
-//     const isAvailable = !existingCours;
-
-//     return success(res, 200, { 
-//       available: isAvailable,
-//       hasConflict: !isAvailable,
-//       conflictingCours: existingCours || null 
-//     }, isAvailable ? "Classe disponible" : "Classe occupée");
-
-//   } catch (error: any) {
-//     console.error('Erreur lors de la vérification de disponibilité:', error);
-//     return generateServerErrorCode(res, 500, error, "Erreur lors de la vérification");
-//   }
 // };
+
 
 export const getAllEmploiDuTemps = async (req: Request, res: Response) => {
     const { page, limit, searchTerm, startIndex, searchQueries } = paginationAndRechercheInit(req, EmploiDuTemps);

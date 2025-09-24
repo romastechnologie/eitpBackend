@@ -197,7 +197,6 @@ export const getComposition = async (req: Request, res: Response) => {
 };
 
 
-
 export const updateComposition = async (req: Request, res: Response) => {
   try {
     const compositionRepo = myDataSource.getRepository(Composition);
@@ -332,7 +331,6 @@ export const updateComposition = async (req: Request, res: Response) => {
     );
   }
 };
-
 
 // delete avec permission ici
 
