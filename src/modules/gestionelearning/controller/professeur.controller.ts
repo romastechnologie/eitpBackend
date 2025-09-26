@@ -206,6 +206,7 @@ export const getAllProfesseur = async (req: Request, res: Response) => {
     let reque = await myDataSource.getRepository(Professeur)
         .createQueryBuilder('professeur')
         .leftJoinAndSelect("professeur.professeurMatieres", "profeseurMatiere")
+            .leftJoinAndSelect("professeur.quartier", "quartier")
         .leftJoinAndSelect("profeseurMatiere.matiere", "matiere")
         .where("professeur.deletedAt IS NULL");
     if (searchQueries.length > 0) {
