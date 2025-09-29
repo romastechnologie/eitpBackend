@@ -294,14 +294,11 @@ export const checkClasseAvailability = async (req: Request, res: Response) => {
             });
         }
 
-        // ========================================
-        // 2. VÉRIFICATION DISPONIBILITÉ PROFESSEUR
-        // ========================================
         if (professeurIdNum && !classeOccupee) {
             const professeurQuery = myDataSource.getRepository(Cours)
                 .createQueryBuilder('cours')
                 .leftJoinAndSelect('cours.professeur', 'professeur') 
-                .leftJoin('cours.classe', 'classe')
+                .leftJoinAndSelect('cours.classe', 'classe')
                 .leftJoinAndSelect('cours.emploiDuTemps', 'emploiDuTemps')
                 .where('professeur.id = :professeurId', { professeurId: professeurIdNum })
                 .andWhere('cours.jour = :jour', { jour: jour as string })
