@@ -113,6 +113,7 @@ export const getAllParent = async (req: Request, res: Response) => {
     const { page, limit, searchTerm, startIndex, searchQueries } = paginationAndRechercheInit(req, Parent);
     let reque = await myDataSource.getRepository(Parent)
     .createQueryBuilder('parent')
+    .leftJoinAndSelect("parent.quartier", "quartier")
     .where("parent.deletedAt IS NULL");
     if (searchQueries.length > 0) {
         reque.andWhere(new Brackets(qb => {

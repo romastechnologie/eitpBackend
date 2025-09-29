@@ -46,7 +46,47 @@ export const getAllTypeEmploiDuTemps= async (req: Request, res: Response) => {
     })
 };
 
+
+
+
+
 export const getAllTypeEmploiDuTemp = async (req: Request, res: Response) => {
+  const { page, limit, searchTerm, startIndex } = paginationAndRechercheInit(req, TypeEmploiDuTemps);
+
+  try {
+    let reque = myDataSource.getRepository(TypeEmploiDuTemps)
+      .createQueryBuilder("typeEmploiDuTemps")
+      .where("typeEmploiDuTemps.deletedAt IS NULL");
+
+    // Recherche
+    if (searchTerm && searchTerm.trim() !== "") {
+      reque.andWhere(
+        new Brackets(qb => {
+          qb.where("LOWER(typeEmploiDuTemps.code) LIKE LOWER(:keyword)", { keyword: `%${searchTerm}%` })
+            .orWhere("LOWER(typeEmploiDuTemps.libelle) LIKE LOWER(:keyword)", { keyword: `%${searchTerm}%` });
+        })
+      );
+    }
+
+    // Pagination + exécution
+    const [data, totalElements] = await reque
+      .skip(startIndex)
+      .take(limit)
+      .orderBy("typeEmploiDuTemps.createdAt", "DESC")
+      .getManyAndCount();
+
+    const message = "La liste des types d'emplois du temps a bien été récupérée.";
+    const totalPages = Math.ceil(totalElements / limit);
+
+    return success(res, 200, { data, totalPages, totalElements, limit, page }, message);
+
+  } catch (error) {
+    const message = "La liste des types d'emplois du temps n'a pas pu être récupérée. Réessayez dans quelques instants.";
+    return generateServerErrorCode(res, 500, error, message);
+  }
+};
+
+export const getAllTypeEmploiDuTemp2 = async (req: Request, res: Response) => {
     const { page, limit, searchTerm, startIndex, searchQueries } = paginationAndRechercheInit(req, TypeEmploiDuTemps);
     let reque = await myDataSource.getRepository(TypeEmploiDuTemps)
     .createQueryBuilder('typeEmploiDuTemps')
