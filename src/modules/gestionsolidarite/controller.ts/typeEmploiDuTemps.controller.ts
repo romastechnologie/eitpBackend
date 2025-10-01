@@ -46,10 +46,6 @@ export const getAllTypeEmploiDuTemps= async (req: Request, res: Response) => {
     })
 };
 
-
-
-
-
 export const getAllTypeEmploiDuTemp = async (req: Request, res: Response) => {
   const { page, limit, searchTerm, startIndex } = paginationAndRechercheInit(req, TypeEmploiDuTemps);
 
