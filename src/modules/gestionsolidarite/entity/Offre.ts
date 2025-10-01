@@ -3,6 +3,8 @@ import { IsNotEmpty } from "class-validator";
 import { Column, CreateDateColumn, DeleteDateColumn, Entity, JoinColumn, ManyToOne, OneToMany, PrimaryGeneratedColumn, Timestamp, UpdateDateColumn } from "typeorm";
 import { CategorieOffre } from "./CategorieOffre";
 import { User } from "../../gestiondesutilisateurs/entity/user.entity";
+import { Commune } from "../../gestiondeszones/entity/Communes";
+import { Activite } from "./Activite";
 
 
 
@@ -20,8 +22,12 @@ export class Offre {
     description: string
 
     @Column({ nullable: false })
-    @IsNotEmpty({ message: "La description est obligatoire" })
-    salaire: number
+    @IsNotEmpty({ message: "Le salaire est obligatoire" })
+    salaire: string
+
+    @Column({ nullable: false })
+    @IsNotEmpty({ message: "L'indication est obligatoire" })
+    indication: string
 
     @Column({ nullable: false })
     @IsNotEmpty({ message: "La date de publication est obligatoire" })
@@ -33,6 +39,12 @@ export class Offre {
 
     @ManyToOne(() => CategorieOffre, (categorieOffre) => categorieOffre.offres)
     categorieOffre: CategorieOffre
+
+    @ManyToOne(() => Commune, (commune) => commune.offres)
+    commune: Commune
+
+    @ManyToOne(() => Activite, (activite) => activite.offres)
+    activite: Activite
 
     @ManyToOne(() => User)
     userCreation: User

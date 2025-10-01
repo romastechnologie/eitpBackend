@@ -1,6 +1,7 @@
 
 import { IsNotEmpty } from "class-validator";
 import { Column, CreateDateColumn, DeleteDateColumn, Entity, JoinColumn, ManyToOne, OneToMany, PrimaryGeneratedColumn, Timestamp, UpdateDateColumn } from "typeorm";
+import { Offre } from "./Offre";
 
 
 
@@ -16,6 +17,10 @@ export class Activite {
     @Column({ unique: true, nullable: false })
     @IsNotEmpty({ message: "Le libellé est obligatoire" })
     libelle: string
+
+    @OneToMany(() => Offre, offre => offre.activite)
+    offres: Offre[];
+
 
     @CreateDateColumn()
     createdAt: Timestamp
