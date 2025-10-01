@@ -226,9 +226,6 @@ export const checkClasseAvailability = async (req: Request, res: Response) => {
         let professeurOccupe = false;
         let conflictingCours = null;
 
-        // ========================================
-        // 1. VÉRIFICATION DISPONIBILITÉ CLASSE
-        // ========================================
         const classeQuery = myDataSource.getRepository(Cours)
             .createQueryBuilder('cours')
             .leftJoin('cours.classe', 'classe')
@@ -722,7 +719,7 @@ export const updateEmploiDuTemps = async (req: Request, res: Response) => {
 
         if (Array.isArray(coursToDelete)) {
             for (const coursId of coursToDelete) {
-                await coursRepo.delete({ id: coursId });
+                await coursRepo.softDelete({ id: coursId });
             }
         }
 
