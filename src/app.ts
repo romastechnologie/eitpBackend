@@ -110,6 +110,8 @@ app.use(
       "http://192.168.8.59:8081",
       "http://192.168.8.59:8080",
       "http://localhost:4002",
+      "http://localhost:5173"
+
     ],
     credentials: true,
   })
@@ -130,6 +132,10 @@ app.use(
 
 
 LibreRoutes(app);
+categorieOffresRoutes(app);
+activitesRoutes(app);
+offresRoutes(app);
+communesRoutes(app);
 emploisDuTempsRoutes(app);
 professeursRoutes(app);
 
@@ -185,7 +191,7 @@ alaUneRoutes(app);
 
 //newsletters
 newslettersRoutes(app);
-communesRoutes(app);
+
 infoFooterRoutes(app);
 
 //elearning
@@ -210,10 +216,9 @@ typeEmploiDuTempsRoutes(app);
 // emploisDuTempsRoutes(app);
 qualificationsRoutes(app);
 languesRoutes(app);
-activitesRoutes(app);
+
 classesRoutes(app);
-categorieOffresRoutes(app);
-offresRoutes(app);
+
 inscriptionsRoutes(app);
 
 //zones
