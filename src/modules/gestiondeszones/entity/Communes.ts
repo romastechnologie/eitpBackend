@@ -3,6 +3,7 @@ import { Column, CreateDateColumn, DeleteDateColumn, Entity, JoinColumn, ManyToO
 import { Departement } from "./Departement";
 import { Arrondissement } from "./Arrondissement";
 import { User } from "../../gestiondesutilisateurs/entity/user.entity";
+import { Offre } from "../../gestionsolidarite/entity/Offre";
 
 
 @Entity('commune')
@@ -23,6 +24,10 @@ export class Commune {
 
     @OneToMany(() => Arrondissement, (arrondissement) => arrondissement.commune)
     arrondissements: Arrondissement[]
+
+    @OneToMany(() => Offre, offre => offre.commune)
+    offres: Offre[];
+    
 
     @ManyToOne(() => User)
     userCreation: User

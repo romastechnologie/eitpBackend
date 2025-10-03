@@ -51,6 +51,8 @@ export const getAllOffre = async (req: Request, res: Response) => {
     let reque = await myDataSource.getRepository(Offre)
     .createQueryBuilder('offre')
     .leftJoinAndSelect('offre.categorieOffre','categorieOffre')
+    .leftJoinAndSelect('offre.commune','commune')
+    .leftJoinAndSelect('offre.activite','activite')
     .where("offre.deletedAt IS NULL");
     if (searchQueries.length > 0) {
         reque.andWhere(new Brackets(qb => {
