@@ -32,7 +32,6 @@ export const createAnneeAcademique = async (req: Request, res: Response) => {
 }
 
 
-
 export const getAllAnneeAcademique = async (req: Request, res: Response) => {
     const { page, limit, searchTerm, startIndex, searchQueries } = paginationAndRechercheInit(req, AnneeAcademique);
     let reque = await myDataSource.getRepository(AnneeAcademique)

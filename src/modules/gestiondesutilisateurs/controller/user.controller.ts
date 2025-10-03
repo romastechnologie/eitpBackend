@@ -75,22 +75,42 @@ export const getAllUsers = async (req: Request, res: Response) => {
 
 //  Récupérer un utilisateur par ID (userCreation dans le body)
 export const getUser = async (req: Request, res: Response) => {
-  await myDataSource.getRepository(User).findOne({
-    where: { id: parseInt(req.body.userCreation) },
-    relations: { role: true }
-  }).then(user => {
-      if(user === null) {
-        const message = `L'utilisateur demandé n'existe pas. Réessayez avec un autre identifiant.`
-        return generateServerErrorCode(res,400,"L'id n'existe pas",message)
+  try {
+    // CORRECTION: Utiliser req.params.id au lieu de req.body.userCreation
+    const userId = parseInt(req.params.id);
+    
+    // Vérifier que l'ID est valide
+    if (isNaN(userId)) {
+      const message = `L'identifiant fourni n'est pas valide.`;
+      return generateServerErrorCode(res, 400, "ID invalide", message);
+    }
+
+    const user = await myDataSource.getRepository(User).findOne({
+      where: { id: userId },
+      relations: { 
+        role: true,
+        articles: true,
+        userForums: true,
+        reponses: true
       }
-      const { password, ...data } = user;
-      const message = "L'utilisateur a bien été trouvé."
-      return success(res,200, data,message);
-    })
-    .catch(error => {
-      const message = `L'utilisateur n'a pas pu être récupéré. Réessayez dans quelques instants.`
-      return generateServerErrorCode(res,500,error,message)
-  })
+    });
+
+    if (user === null) {
+      const message = `L'utilisateur demandé n'existe pas. Réessayez avec un autre identifiant.`;
+      return generateServerErrorCode(res, 404, "Utilisateur non trouvé", message);
+    }
+
+    // Exclure le mot de passe de la réponse
+    const { password, tokenVerifyMail, ...data } = user;
+    
+    const message = "L'utilisateur a bien été trouvé.";
+    return success(res, 200, data, message);
+    
+  } catch (error) {
+    console.error("Erreur lors de la récupération de l'utilisateur:", error);
+    const message = `L'utilisateur n'a pas pu être récupéré. Réessayez dans quelques instants.`;
+    return generateServerErrorCode(res, 500, error, message);
+  }
 };
 
 //  Mise à jour utilisateur

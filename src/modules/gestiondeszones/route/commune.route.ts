@@ -12,7 +12,7 @@ export  const communesRoutes =  (router: express.Router) => {
   // router.put('/api/communes/:id', checkPermission('EditCommune'), updateCommune);
 
 
-   router.post('/api/communes',  createCommune);
+  router.post('/api/communes',  createCommune);
   router.get('/api/communes',  getAllCommune);
   router.get('/api/all/communes',  getAllCommunes);
   router.get('/api/communes/:id', getCommune);

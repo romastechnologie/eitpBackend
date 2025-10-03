@@ -138,6 +138,10 @@ offresRoutes(app);
 communesRoutes(app);
 emploisDuTempsRoutes(app);
 professeursRoutes(app);
+etudiantsRoutes(app);
+quartiersRoutes(app);
+qualificationsRoutes(app);
+userRoutes(app);
 
 authentication(app);
 app.use(isAuthenticatedOne);
@@ -177,7 +181,7 @@ montantsRoutes(app);
 
 rolesRoutes(app);
 
-userRoutes(app);
+// userRoutes(app);
 
 permissionsRoutes(app);
 
@@ -197,7 +201,7 @@ infoFooterRoutes(app);
 //elearning
 anneesRoutes(app);
 compositionsRoutes(app);
-etudiantsRoutes(app);
+// etudiantsRoutes(app);
 filieresRoutes(app);
 forumsRoutes(app);
 matieresRoutes(app);
@@ -224,7 +228,7 @@ inscriptionsRoutes(app);
 //zones
 arrondissementsRoutes(app);
 communesRoutes(app);
-quartiersRoutes(app);
+// quartiersRoutes(app);
 departementsRoutes(app);
 
 
